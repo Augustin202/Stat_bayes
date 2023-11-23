@@ -42,6 +42,21 @@ compute_z<-function(beta){
   return (z)
 }
 
+compute_beta<-function(z, beta_tilde){
+  n = length(z)
+  beta <- vector(mode="numeric", length=n)
+  j<-1
+  for (i in 1:n){
+    if(z[i]==0){
+      beta[i]<-0
+    }else{
+      beta[i]<-beta_tilde[j]
+      j<-j+1
+    }
+  }
+  return(beta)
+}
+
 sum_var <-function(X){
   temp <-  apply(X, 2, var)/nrow(X)
   return (sum(temp)/length(temp))
@@ -51,7 +66,7 @@ conditional_posterior<- function(R2, q, Y,U,X,sigma2,phi,beta,z,a,b,A,B){
   if(R2==0){
     return(0)
   }
-  z <- compute_z(beta)
+  #z <- compute_z(beta)
   k <- ncol(X)
   v_x <- sum_var(X)
   s_z <- sum(z)
@@ -66,26 +81,12 @@ conditional_posterior<- function(R2, q, Y,U,X,sigma2,phi,beta,z,a,b,A,B){
     print(t(beta) %*%  diag(z) %*% beta)
 }
   res2 <- q^(s_z + 0.5*s_z + a -1)
-    if (is.na(res2)) {
-  print("res2")
-}
   res3 <-(1-q)^(k-s_z + b +1 )
-    if (is.na(res3)) {
-  print("res3")
-}
   res4 <- R2^(A-1-0.5*s_z)
-    if (is.na(res4)) {
-  print("res4")
-}
   res5 <- (1-R2)^(0.5*s_z+B-1)
-    if (is.na(res5)) {
-  print("res5")
-}
-  
   return (res1*res2*res3*res4*res5)
 }
 
-draw_conditional_posterior_R2_q(Y,U,X,sigma2,phi,beta,z,1,1,1,1)
 
 ```
 
@@ -104,7 +105,6 @@ draw_conditional_posterior_R2_q<-function(Y,U,X,sigma2,phi,beta,z,a,b,A,B){
     }
   }
   list_samples <- sample(list_indexes,m,replace =TRUE ,prob=list_prob)
-  print(2)
   matrix_samples <-matrix(0,m,2)
   for (i in 1:m){
     matrix_samples[i,1]<- grid[list_samples[m]%/%p]
@@ -115,9 +115,7 @@ draw_conditional_posterior_R2_q<-function(Y,U,X,sigma2,phi,beta,z,a,b,A,B){
 ```
 
 
-```{r}
-draw_conditional_posterior_R2_q(Y,U,X,sigma2,phi,beta,z,1,1,1,1)
-```
+
 
 ```{r}
 #test des fonctions ci dessus 
@@ -131,7 +129,7 @@ sigma2<-1
 R2<-0.9
 q<-0.15
 
-draw_conditional_posterior_R2_q(Y,U,X,phi,beta,z,1,1,1,1)
+draw_conditional_posterior_R2_q(Y,U,X,sigma2,phi,beta,z,1,1,1,1)
 ```
 
 
@@ -183,11 +181,17 @@ def_X_tilde<-function(X,z){
 
 ```{r}
 
-sample_conditional_posterior_zi<-function(Y,U,X,sigma2,phi,gamma2,z,i){
-  Y_tilde<- Y - U%*%phi
+sample_conditional_posterior_zi_bis<-function(Y,U,X,sigma2,phi,gamma2,z,i){
+  print(1)
+  if(U==0){
+    Y_tilde<- Y
+  }else{
+    Y_tilde<- Y - U%*%phi
+  }
   T<-length(Y)
   k<-dim(X)[2]
   
+  print(2)
   #cas zi=0
   z[i]<-0
   s_z<-sum(z)
@@ -199,10 +203,14 @@ sample_conditional_posterior_zi<-function(Y,U,X,sigma2,phi,gamma2,z,i){
     W_tilde<-t(X_tilde)%*%X_tilde + I_sz/gamma2
     beta_tilde_hat<-solve(W_tilde)%*%t(X_tilde)%*%Y_tilde
     proba_0<-((t(Y_tilde)%*%Y_tilde - t(beta_tilde_hat)%*%W_tilde%*%beta_tilde_hat)/2 )
+    print(proba_0)
     proba_0<-proba_0^(-T/2)
+    print(proba_0)
     proba_0<-proba_0*det(W_tilde)^0.5*gamma(T/2)*q^s_z*(1-q)^(k-s_z)*(1/gamma2)^(s_z/2)
+    print(proba_0)
   }
 
+  print(3)
 
   #cas zi=1
   z[i]<-1
@@ -216,10 +224,59 @@ sample_conditional_posterior_zi<-function(Y,U,X,sigma2,phi,gamma2,z,i){
   proba_1<-proba_1*det(W_tilde)^0.5*gamma(T/2)*q^s_z*(1-q)^(k-s_z)*(1/gamma2)^(s_z/2)
   
   p<-proba_1/(proba_1+proba_0)
+  print('proba')
+  print(proba_0)
+  print(proba_1)
+  print(p)
+  print('fin')
+  return (rbinom(1, size = 1, prob = p))
+}
+
+```
+
+
+```{r}
+#cette fonction a une méthode de calcul de p qui est mieux que celle d'avant. Celle d'avant à cause de probmème de puissance renvoyait toujours 0 pour les deux proba et donc P = nan. Ce n'est pas le cas avec cette fonction
+sample_conditional_posterior_zi<-function(Y,U,X,sigma2,phi,gamma2,z,i){
+  if(U==0){
+    Y_tilde<- Y
+  }else{
+    Y_tilde<- Y - U%*%phi
+  }
+  T<-length(Y)
+  k<-dim(X)[2]
+  
+
+  z[i]<-0
+  s_z<-sum(z)
+  if (s_z==0){
+    return(1)
+  }
+  #cas zi=0
+  I_sz_0 <- diag(1, nrow = sum(z), ncol = sum(z))
+  X_tilde_0<-def_X_tilde(X,z)
+  W_tilde_0<-t(X_tilde_0)%*%X_tilde_0 + I_sz_0/gamma2
+  beta_tilde_hat_0<-solve(W_tilde_0)%*%t(X_tilde_0)%*%Y_tilde
+  proba_0<-((t(Y_tilde)%*%Y_tilde - t(beta_tilde_hat_0)%*%W_tilde_0%*%beta_tilde_hat_0) )
+
+  
+  #cas zi=1
+  z[i]<-1
+  s_z<-sum(z)
+  I_sz_1 <- diag(1, nrow = sum(z), ncol = sum(z))
+  X_tilde_1<-def_X_tilde(X,z)
+  W_tilde_1<-t(X_tilde_1)%*%X_tilde_1 + I_sz_1/gamma2
+  beta_tilde_hat_1<-solve(W_tilde_1)%*%t(X_tilde_1)%*%Y_tilde
+  proba_1<- (t(Y_tilde)%*%Y_tilde - t(beta_tilde_hat_1)%*%W_tilde_1%*%beta_tilde_hat_1)
+
+  p<-(proba_0/proba_1)^(-T/2)
+  p<- det(W_tilde_1)^(-1/2) /( det(W_tilde_1)^(-1/2)  + ((1-q)/q)*gamma2^(1/2)* det(W_tilde_0)^(-1/2) * p )
+
   #print('proba')
   #print(proba_0)
   #print(proba_1)
   #print(p)
+  #print('fin')
   return (rbinom(1, size = 1, prob = p))
 }
 
@@ -230,15 +287,16 @@ sample_conditional_posterior_z<-function(Y,U,X,phi,R2,q,z0){
   k<-dim(X)[2]
   v_X <- sum_var(X)
   gamma2<-R2/(k*q*v_X*(1-R2))
-    for (j in 1:100) {
+    for (j in 1:1) {
     for (i in 1:length(z0)) {
       z0[i]<-sample_conditional_posterior_zi(Y,U,X,sigma2,phi,gamma2,z0,i)
   }
   }
   return (z0)
 }
-
 ```
+
+
 
 ```{r}
 #test des fonctions ci dessus 
@@ -263,7 +321,11 @@ sample_conditional_posterior_z(Y,U,X,phi,R2,q,z0)
 sample_conditional_posterior_sigma2<-function(Y,U,X,phi,R2, q, z){
   shape<-length(Y)/2 
   I_sz <- diag(1, nrow = sum(z), ncol = sum(z))
-  Y_tilde<- Y - U%*%phi
+  if(U==0){
+    Y_tilde<- Y
+  }else{
+    Y_tilde<- Y - U%*%phi
+  }
   X_tilde<-def_X_tilde(X,z)
   k<-dim(X)[2]
   v_X <- sum_var(X)
@@ -299,7 +361,11 @@ draw_conditional_posterior_R2_q(Y,U,X,sigma2,phi,beta,z,1,1,1,1)
 
 sample_conditional_posterior_beta_tilde<-function(Y,U,X,phi,R2,q,sigma2,z){
   I_sz <- diag(1, nrow = sum(z), ncol = sum(z))
-  Y_tilde<- Y - U%*%phi
+  if(U==0){
+    Y_tilde<- Y
+  }else{
+    Y_tilde<- Y - U%*%phi
+  }
   X_tilde<-def_X_tilde(X,z)
   k<-dim(X)[2]
   v_X <- sum_var(X)
@@ -343,25 +409,49 @@ sample_data0<-function(T,k,rho,s,Ry){
   Y<-X%*%beta + epsilon
   return(list(X,Y,beta))
 }
-res<-sample_data0(5,3,0.75,1,0.25)
-X<-res[1]
-Y<-res[2]
-beta<-res[3]
+
 ```
 
 
-```{R}
 
-res<-sample_data0(200,100,0.75,5,0.25)
-X<-res[1]
-Y<-res[2]
-beta<-res[3]
+
+```{R}
+a<-1
+A<-1
+b<-1
+B<-1
+
+T<-200
+k<-100
+Ry<-0.25
+rho<-0.75
+s<-5
+sigma2<-sum(sapply(X%*%beta, function(x) x^2))*(1/Ry-1)/T
+res<-sample_data0(T,k,rho,s,Ry)
+X<-res[1][[1]]
+Y<-res[2][[1]]
+U<-0
+beta<-res[3][[1]]
+phi<-0
+z <- compute_z(beta)
+s_z<-sum(z)
+
 
 for(i in 1:10){
-  
+  print(i)
+  mat_R2q<-draw_conditional_posterior_R2_q(Y,U,X,sigma2,phi,beta,z,a,b,A,B)
+  R2<-mat_R2q[1]
+  q<-mat_R2q[2]
+  print(i)
+  z<-sample_conditional_posterior_z(Y,U,X,phi,R2,q,z)
+  sigma2<-sample_conditional_posterior_sigma2(Y,U,X,phi,R2, q, z)
+  beta_tilde<-sample_conditional_posterior_beta_tilde(Y,U,X,phi,R2,q,sigma2,z)
+  beta<-compute_beta(z,beta_tilde)
 }
 
 ```
 
+```{R}
+print(sum(z))
 
-
+```
