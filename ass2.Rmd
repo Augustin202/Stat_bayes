@@ -8,6 +8,7 @@ output: html_notebook
 #imports
 library(MASS)
 library(invgamma)
+library(glmnet)
 ```
 
 ## **Question 2 - (I)**
@@ -71,17 +72,8 @@ conditional_posterior<- function(R2, q, Y,U,X,sigma2,phi,beta,z,a,b,A,B){
   v_x <- sum_var(X)
   s_z <- sum(z)
   res1 <- exp( -1/(2*sigma2)*(k*v_x*q*(1-R2))/R2 * t(beta) %*%  diag(z) %*% beta)
-  if (is.na(res1)) {
-  print("res1**")
-    print(v_x)
-    print(sigma2)
-    print(k)
-    print(q)
-    print(R2)
-    print(t(beta) %*%  diag(z) %*% beta)
-}
   res2 <- q^(s_z + 0.5*s_z + a -1)
-  res3 <-(1-q)^(k-s_z + b +1 )
+  res3 <-(1-q)^(k-s_z + b -1 )
   res4 <- R2^(A-1-0.5*s_z)
   res5 <- (1-R2)^(0.5*s_z+B-1)
   return (res1*res2*res3*res4*res5)
@@ -98,13 +90,36 @@ draw_conditional_posterior_R2_q<-function(Y,U,X,sigma2,phi,beta,z,a,b,A,B){
   p = length(grid)
   list_indexes <- vector(mode="numeric", length=p^2)
   list_prob <- vector(mode="numeric", length=p^2)
+  
+  
+  
+  k <- ncol(X)
+  v_x <- sum_var(X)
+  s_z <- sum(z)
+  calc_mat<- t(beta) %*%  diag(z) %*% beta
   for (i in 1:p){
+    R2<-grid[i]
+    res4 <- R2^(A-1-0.5*s_z)
+    res5 <- (1-R2)^(0.5*s_z+B-1)
     for(j in 1:p){
-      list_prob[i*p+j] <-conditional_posterior(grid[i],grid[j], Y,U,X,sigma2,phi,beta,z,a,b,A,B)
+      q<-grid[j]
+      if(R2==0){
+        res<-0
+      }else{
+        res1 <- exp( -1/(2*sigma2)*(k*v_x*q*(1-R2))/R2 * calc_mat)
+        res2 <- q^(s_z + 0.5*s_z + a -1)
+        res3 <-(1-q)^(k-s_z + b -1 )
+        res<- (res1*res2*res3*res4*res5)
+      }
+
+      list_prob[i*p+j] <-res
       list_indexes[i*p+j] <- i*p+j
     }
   }
-  list_samples <- sample(list_indexes,m,replace =TRUE ,prob=list_prob)
+  
+
+  list_samples <- sample(list_indexes, m, replace = TRUE, prob = list_prob)
+
   matrix_samples <-matrix(0,m,2)
   for (i in 1:m){
     matrix_samples[i,1]<- grid[list_samples[m]%/%p]
@@ -329,13 +344,13 @@ sample_conditional_posterior_sigma2<-function(Y,U,X,phi,R2, q, z){
   X_tilde<-def_X_tilde(X,z)
   k<-dim(X)[2]
   v_X <- sum_var(X)
-  gamma2<-R2/(k*q*v_X*(1-R2))  
+  gamma2<-R2/(k*q*v_X*(1-R2))
   W_tilde<-t(X_tilde)%*%X_tilde + I_sz/gamma2
   beta_tilde_hat <- solve(W_tilde)%*%t(X_tilde)%*%Y_tilde
   scale<-t(beta_tilde_hat)%*%W_tilde%*%beta_tilde_hat
   scale<- t(Y)%*%Y - scale
   scale<-scale/2
-  echantillon_inverse_gamma <- rinvgamma(1, shape = shape, rate = 1/scale)
+  echantillon_inverse_gamma <- rinvgamma(1, shape = shape, rate = scale)
   return (echantillon_inverse_gamma)
 }
 
@@ -402,11 +417,13 @@ sample_data0<-function(T,k,rho,s,Ry){
   mu <- rep(0, times = k)
   X<-mvrnorm(n = T, mu = mu, Sigma = corr_matrix)
   beta<-mvrnorm(n = k, mu = 0, Sigma = 1)
-  indices_zeros <- sample(length(beta), size = s)
+  indices_zeros <- sample(length(beta), size = k-s)
   beta[indices_zeros] <- 0
   sigma2<-sum(sapply(X%*%beta, function(x) x^2))*(1/Ry-1)/T
   epsilon<-mvrnorm(n = T, mu = 0, Sigma = sigma2)
   Y<-X%*%beta + epsilon
+  lasso_model <- cv.glmnet(X, Y, alpha = 1, intercept = FALSE)
+  beta<-(coef(lasso_model, s = "lambda.min")[-1, 1])
   return(list(X,Y,beta))
 }
 
@@ -426,23 +443,24 @@ k<-100
 Ry<-0.25
 rho<-0.75
 s<-5
-sigma2<-sum(sapply(X%*%beta, function(x) x^2))*(1/Ry-1)/T
 res<-sample_data0(T,k,rho,s,Ry)
 X<-res[1][[1]]
 Y<-res[2][[1]]
 U<-0
 beta<-res[3][[1]]
+sigma2<-sum(sapply(X%*%beta, function(x) x^2))*(1/Ry-1)/T
 phi<-0
 z <- compute_z(beta)
 s_z<-sum(z)
 
 
-for(i in 1:10){
-  print(i)
+for(i in 1:1000){
+  if (i %% 50 == 0) {
+    print(i)
+  }
   mat_R2q<-draw_conditional_posterior_R2_q(Y,U,X,sigma2,phi,beta,z,a,b,A,B)
   R2<-mat_R2q[1]
   q<-mat_R2q[2]
-  print(i)
   z<-sample_conditional_posterior_z(Y,U,X,phi,R2,q,z)
   sigma2<-sample_conditional_posterior_sigma2(Y,U,X,phi,R2, q, z)
   beta_tilde<-sample_conditional_posterior_beta_tilde(Y,U,X,phi,R2,q,sigma2,z)
@@ -452,6 +470,15 @@ for(i in 1:10){
 ```
 
 ```{R}
-print(sum(z))
+a<-1
+A<-1
+b<-1
+B<-1
 
+T<-200
+k<-100
+Ry<-0.25
+rho<-0.75
+s<-5
+res<-sample_data0(T,k,rho,s,Ry)
 ```
