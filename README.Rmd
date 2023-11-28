@@ -21,10 +21,10 @@ system("git clone https://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@github.com/Au
 ```
 
 - open the .rproj file in rstudio
+
 - For paper 1, run:
 
 ```{r,eval=FALSE}
 library(targets)
-Sys.setenv(TAR_PROJECT = "assignment2")
 tar_make()
 ```
