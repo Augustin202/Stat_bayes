@@ -179,22 +179,49 @@ sample_r2_q_cond_y_u_x_theta_z<-
 ## III.
 
 #'@examples
+#'r2=.5;q=.5;u=matrix(0,nrow(x),1);x=generate_multiple_x(number_of_datasets = 1)[[1]]
+#'z=rep(c(1,0),c(5,195));sigma=1;beta=rnorm(z)*z;y=generate_single_y(xx=x)
+#'likelihood_z_cond_y_u_x_phi_gamma(z,y,u,x,phi=0,r2,q,tt=nrow(xx),s_z=sum(z),k=ncol(x),barvx=1,gamma2=r2/(k*q*barvx*(1-r2)))
+loglikelihood_z_cond_y_u_x_phi_gamma<-
+  function(z,y,u=matrix(0,nrow(x),1),
+           x,phi=0,r2,q,tt=nrow(x),s_z=sum(z),k=ncol(x),barvx=1,
+           gamma2=r2/(k*q*barvx*(1-r2))){
+    tilde_y=y-u%*%phi
+    tilde_x=x[,z==1]
+    tilde_w=(t(tilde_x)%*%tilde_x+diag(s_z)/gamma2);
+    #tilde_beta=beta[z==1]
+    hat_tilde_beta=solve(tilde_w)%*%t(tilde_x)%*%tilde_y
+    log((q^s_z)*((1-q)^(k-s_z)))+
+      (-s_z/2)*log(gamma2)+
+      (-1/2)*log(det(tilde_w))+
+      (-tt/2)*log(((t(tilde_y)%*%tilde_y-t(hat_tilde_beta)%*%tilde_w%*%hat_tilde_beta)/2))+
+      log(gamma(tt/2))
+  }
+
+#'@examples
 #'r2=.5;q=.5;u=0;x=generate_multiple_x(number_of_datasets = 1)[[1]]
 #'z=rep(c(1,0),c(5,195));sigma=1;beta=rnorm(z)*z;y=generate_single_y(xx=x)
 #'loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(r2,q,y,u,x,sigma,beta,z)
 
-loglikelihood_z_cond_y_u_x_phi_gamma<-
-  function(y,u,x,phi,gamma,tt=nrow(tt),s_z=sum(z),k=ncol(x)){
-    tilde_w=
-    (q^s_z)*((1-q)^(k-s_z))*
-      gamma^(-s_z)*
-      det(tilde_w)^(-1/2)*
-      gamma(tt/2)
-    
-  }
-
-
+sample_zi_cond_zj_y_u_x_phi_gamma<-
+  function(z,i,y,u=0,
+           x,phi=0,r2,q,tt=nrow(x),k=ncol(x),barvx=1,
+           gamma2=r2/(k*q*barvx*(1-r2))){
+    sample(1:2,
+           size=1,
+           prob=c(loglikelihood_z_cond_y_u_x_phi_gamma((`[<-`)(z,i,0),y=y,u=u,
+                                      x=x,phi=phi,r2=r2,q=q,tt=tt,k=k,barvx=1,
+                                      gamma2=gamma2),
+      loglikelihood_z_cond_y_u_x_phi_gamma((`[<-`)(z,i,1),y=y,u=u,
+                                           x=x,phi=phi,r2=r2,q=q,tt=tt,k=k,barvx=1,
+                                           gamma2=gamma2))|>
+        (function(x){x-max(x)})()|>
+        exp())
+    }
 
 
 
 ### IV.
+
+
+
