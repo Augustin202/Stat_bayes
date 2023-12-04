@@ -70,11 +70,15 @@ generate_y_sample_q<-function(
                   #xbeta=xx[,sample(ncol(xx),size = d$s,replace=FALSE)]%*%beta#we could take the n first one would do the same
                   sigma_epsilon<-sqrt((1/d$r_y-1)/T)*abs(xbeta)
                   y=xbeta +rnorm(nrow(xx),sd=sigma_epsilon)
+<<<<<<< HEAD
                   q<-sample_q(xx,y,hyperprior_a=hyperprior_a,
                               hyperprior_b=hyperprior_b,
                               hyperprior_aa=hyperprior_aa,
                               hyperprior_bb=default_hyperprior_bb,
                               )
+=======
+                  q<-sample_q(xx,y)
+>>>>>>> 3be48d5 (init Rproj)
                   
                   
                 })
