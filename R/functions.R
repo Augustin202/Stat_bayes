@@ -207,7 +207,7 @@ sample_zi_cond_zj_y_u_x_phi_gamma<-
   function(z,i,y,u=0,
            x,phi=0,r2,q,tt=nrow(x),k=ncol(x),barvx=1,
            gamma2=r2/(k*q*barvx*(1-r2))){
-    sample(1:2,
+    sample(0:1,
            size=1,
            prob=c(loglikelihood_z_cond_y_u_x_phi_gamma((`[<-`)(z,i,0),y=y,u=u,
                                       x=x,phi=phi,r2=r2,q=q,tt=tt,k=k,barvx=1,
@@ -221,7 +221,37 @@ sample_zi_cond_zj_y_u_x_phi_gamma<-
 
 
 
+sample_z_cond_y_u_x_phi_gamma<-
+  function(z,y,u=0,
+           x,phi=0,r2,q,tt=nrow(x),k=ncol(x),barvx=1,
+           gamma2=r2/(k*q*barvx*(1-r2))){
+  for(i in 1:100){z=sample_zi_cond_zj_y_u_x_phi_gamma(z,y,u=0,
+             x,phi=0,r2,q,tt=nrow(x),k=ncol(x),barvx=1,
+             gamma2=gamma2)}
+    z}
+
+
+
 ### IV.
 
+#'@examples
+#'r2=.5;q=.5;u=0;x=generate_multiple_x(number_of_datasets = 1)[[1]]
+#'z=rep(c(1,0),c(5,195));sigma=1;beta=rnorm(z)*z;y=generate_single_y(xx=x)
+#'loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(r2,q,y,u,x,sigma,beta,z)
 
+sample_sigma2_cond_y_u_x_phi_r2_q_z<-
+  function(y,u,
+           x,phi,r2,q,tt=nrow(x),k=ncol(x),barvx=1,
+           gamma2=r2/(k*q*barvx*(1-r2)),){
+    sample(1:2,
+           size=1,
+           prob=c(loglikelihood_z_cond_y_u_x_phi_gamma((`[<-`)(z,i,0),y=y,u=u,
+                                                       x=x,phi=phi,r2=r2,q=q,tt=tt,k=k,barvx=1,
+                                                       gamma2=gamma2),
+                  loglikelihood_z_cond_y_u_x_phi_gamma((`[<-`)(z,i,1),y=y,u=u,
+                                                       x=x,phi=phi,r2=r2,q=q,tt=tt,k=k,barvx=1,
+                                                       gamma2=gamma2))|>
+             (function(x){x-max(x)})()|>
+             exp())
+  }
 
