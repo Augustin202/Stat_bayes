@@ -1,3 +1,10 @@
+---
+title: "Assignment 2"
+author: Daniel Bonnery, Max Kramkimel, Augustin Poissonnier
+date: Dec 5, 2023
+output: github_document
+---
+
 # Stat_bayes
 
 ## How to run 
