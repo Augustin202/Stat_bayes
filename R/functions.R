@@ -175,16 +175,17 @@ sample_phi<-function(){0}
 #'z=rep(c(1,0),c(5,95));sigma_epsilon=1;beta=z*rnorm(z);y=generate_single_y(xx=x)
 #'sample_r2_q_cond_y_u_x_theta_z(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid)
 sample_r2_q_cond_y_u_x_theta_z<-
-  function(sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid){
+  function(sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid,m=1){
   r2_q_grid|>
     dplyr::mutate(logpi=loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(
       r2=r2,q=q,sigma_epsilon=sigma_epsilon,barvx=barvx,k=k,a=a,b=b,aa=aa,bb=bb,tbetabeta=tbetabeta,s_z=s_z),
       pi=dqdr2*#we multiply the probabilities by dq dr2 as the grid is not regular
         exp(logpi-max(logpi,na.rm=TRUE))|>
         (function(x){ifelse(is.na(x),0,x)})())|>
-      dplyr::slice(sample(dplyr::n(),size=1,prob=pi))|>
+      dplyr::slice(sample(dplyr::n(),size=m,prob=pi,replace=TRUE))|>
       (`[`)(c("r2","q"))|>
-      unlist()
+      as.matrix()|>
+      (`[`)(1:m,)
 }
 ## **Question 2 - (III)**
 
@@ -217,7 +218,7 @@ loglikelihood_z_cond_y_u_x_phi_gamma<-
 sample_zi_cond_zj_y_u_x_phi_gamma<-
   function(z,i,tilde_y,ttildeytildey,
            x,q,tt,k,
-           gamma2){
+           gamma2,m=1){
     logprob=c(loglikelihood_z_cond_y_u_x_phi_gamma((`[<-`)(z,i,0),tilde_y=tilde_y,ttildeytildey=ttildeytildey,
                                                 x=x,q=q,tt=tt,k=k,
                                                 gamma2=gamma2),
@@ -228,8 +229,9 @@ sample_zi_cond_zj_y_u_x_phi_gamma<-
            
     if(max(logprob,na.rm=TRUE)==-Inf){1}else{
     sample(0:1,
-           size=1,
-           prob=logprob|>exp())}
+           size=m,
+           prob=logprob|>exp(),
+           replace=TRUE)}
     }
 
 #'@examples
@@ -258,9 +260,9 @@ sample_z_cond_y_u_x_phi_gamma<-
 #'loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(r2,q,y,u,x,sigma_epsilon,beta,z)
 
 sample_sigmaepsilon_cond_y_u_x_phi_r2_q_z<-
-  function(z,tt,ttildeytildey,tilde_w,hat_tilde_beta){
+  function(z,tt,ttildeytildey,tilde_w,hat_tilde_beta,m=1){
     (1/rgamma(
-      1, 
+      m, 
       shape=tt/2,  
       rate =(ttildeytildey-t(hat_tilde_beta)%*%tilde_w%*%hat_tilde_beta)/2 ))|>sqrt()
   }
