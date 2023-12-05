@@ -1,30 +1,39 @@
+#fixed parameters
+default_l=0
 default_k=100
 default_tt=200
+default_rho=.75
 
+#hyperpriors
 default_a=1
 default_b=1
 default_aa=1
 default_bb=1
 
-default_rho=.75
+#Simulation parameters
 default_number_of_datasets=100
 default_s=c(5,10,100)
 default_r_y=c(.02,.25,.5)
 
+#Sampling parameters
 default_nrep=5000
 default_burning=1000
 
-
+#'@description
+#' Compute gamma2 as a function of k, q, barvx
+#'@examples
+#'r2=.5;k=default_k,q=.1,barvx=1
+#'gamma2_f(r2,k,q,barvx)
 gamma2_f<-function(r2,k,q,barvx){r2/(k*q*barvx*(1-r2))}
 
 #'@description
 #' Randomly generates multiple dataset version of the matrix X.
 #'@examples
-#'k=default_k
-#'tt=default_tt
+#'k=4
+#'tt=10
 #'rho=default_rho
-#'number_of_datasets=default_number_of_datasets
-#'x<-generate_multiple_x(k=k,tt=tt,rho=rho,number_of_datasets=number_of_datasets)
+#'number_of_datasets=3
+#'generate_multiple_x(k=k,tt=tt,rho=rho,number_of_datasets=number_of_datasets)
 generate_multiple_x<-
   function(k=default_k,
            tt=default_tt,
@@ -43,10 +52,9 @@ generate_multiple_x<-
 barvx_f<-function(x){x|>plyr::aaply(2,var)|>mean()}
 
 #'@examples
-#'k=default_k
 #'s=5
 #'draw_beta(s)
-draw_beta<-function(s){c(rnorm(s))}
+draw_tildebeta<-rnorm
 
 
 #'@examples
@@ -64,7 +72,7 @@ generate_single_y<-function(
                         tt=default_tt,
                         rho=default_rho,
                         number_of_datasets=1)[[1]]){
-                  beta=draw_beta(s)
+                  beta=draw_tildebeta(s)
                   xbeta=xx[,1:s]%*%beta
                   #xbeta=xx[,sample(ncol(xx),size = d$s,replace=FALSE)]%*%beta#we could take the n first one would do the same
                   sigma_epsilon<-sqrt((1/r_y-1)*mean(xbeta^2))
@@ -86,6 +94,7 @@ generate_single_y<-function(
 
 generate_y_sample_q<-function(
   x,
+  u,
   s,
   r_y,
   a,
@@ -101,7 +110,7 @@ generate_y_sample_q<-function(
                   xx<-x[[d$i]]
                   tt=nrow(xx)
                   k=ncol(xx)
-                  beta=draw_beta(d$s)
+                  beta=draw_tildebeta(d$s)
                   xbeta=xx[,1:d$s]%*%beta
                   #xbeta=xx[,sample(ncol(xx),size = d$s,replace=FALSE)]%*%beta#we could take the n first one would do the same
                   sigma_epsilon<-sqrt((1/r_y-1)*mean(xbeta^2))
@@ -209,19 +218,18 @@ sample_zi_cond_zj_y_u_x_phi_gamma<-
   function(z,i,tilde_y,ttildeytildey,
            x,q,tt,k,
            gamma2){
-    prob=c(loglikelihood_z_cond_y_u_x_phi_gamma((`[<-`)(z,i,0),tilde_y=tilde_y,ttildeytildey=ttildeytildey,
+    logprob=c(loglikelihood_z_cond_y_u_x_phi_gamma((`[<-`)(z,i,0),tilde_y=tilde_y,ttildeytildey=ttildeytildey,
                                                 x=x,q=q,tt=tt,k=k,
                                                 gamma2=gamma2),
            loglikelihood_z_cond_y_u_x_phi_gamma((`[<-`)(z,i,1),tilde_y=tilde_y,ttildeytildey=ttildeytildey,
                                                 x=x,q=q,tt=tt,k=k,
                                                 gamma2=gamma2))|>
-             (function(x){x-max(x)})()|>
-             exp()
+             (function(x){x-max(x)})()
            
-    if(max(prob)==0){1}else{
+    if(max(logprob,na.rm=TRUE)>-Inf){1}else{
     sample(0:1,
            size=1,
-           prob=prob)}
+           prob=logprob|>exp())}
     }
 
 #'@examples
