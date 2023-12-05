@@ -11,8 +11,8 @@ default_number_of_datasets=100
 default_s=c(5,10,100)
 default_r_y=c(.02,.25,.5)
 
-default_nrep=110000
-default_burning=10000
+default_nrep=5000
+default_burning=1000
 
 
 gamma2_f<-function(r2,k,q,barvx){r2/(k*q*barvx*(1-r2))}
@@ -33,7 +33,7 @@ generate_multiple_x<-
     big_sigma=stats::toeplitz(.75^(0:(k-1)))
     #toeplitz=rho^(outer(1:.T,1:.T,`-`)|>abs())
     plyr::rlply(number_of_datasets,
-                {mvrnorm(n = tt,mu = rep(0,k),Sigma=big_sigma)|>
+                {MASS::mvrnorm(n = tt,mu = rep(0,k),Sigma=big_sigma)|>
                     plyr::aaply(2,function(x){(x-mean(x))/sd(x)})|>
                     aperm(2:1)})}
 
@@ -71,46 +71,51 @@ generate_single_y<-function(
                   y=xbeta +rnorm(nrow(xx),sd=sigma_epsilon)
                   y}
 #'@examples
-#'k=default_k
+#'x=generate_multiple_x(k=default_k,tt=default_tt,rho=default_rho,number_of_datasets=3)
+#'nrep=30
+#'burning=10
 #'s=default_s
 #'r_y=default_r_y
 #'rho=default_rho
-#'number_of_datasets=default_number_of_datasets
-#'xx=generate_multiple_x(k=default_k,tt=default_tt,rho=default_rho,number_of_datasets=1)[[1]]
-#'generate_single_y(s[1],r_y[1],xx)
+#'a=default_a
+#'b=default_b
+#'aa=default_aa
+#'bb=default_bb
+#'r2_q_grid=r2_q_grid_generate()
+#'generate_y_sample_q(x,s,r_y,a,b,aa,bb,r2_q_grid,nrep,burning)
 
 generate_y_sample_q<-function(
+  x,
   s,
   r_y,
   a,
   b,
   aa,
   bb,
-  r2_grid,
+  r2_q_grid,
   nrep,
-  burning,
-  x,
-  tt=nrow(x),
-  k=ncol(x)){
+  burning){
   expand.grid(s=s,r_y=r_y,i=1:length(x))|>
       plyr::daply(~s+r_y+i,
                 function(d){
-                  xx<-x[[i]]
+                  xx<-x[[d$i]]
+                  tt=nrow(xx)
+                  k=ncol(xx)
                   beta=draw_beta(d$s)
                   xbeta=xx[,1:d$s]%*%beta
                   #xbeta=xx[,sample(ncol(xx),size = d$s,replace=FALSE)]%*%beta#we could take the n first one would do the same
                   sigma_epsilon<-sqrt((1/r_y-1)*mean(xbeta^2))
                   y=xbeta +rnorm(nrow(xx),sd=sigma_epsilon)
-                barvx=barvx_f(xx)
+                  barvx=barvx_f(xx)
                   q<-Gibbs_q(x = xx,y = y,u = u,barvx = barvx,
-                             tt = tt,k = k,phi = phi,z = z,r2_q_grid = r2_q_grid,a=a,
+                             tt = tt,k = k,phi = phi,r2_q_grid = r2_q_grid,a=a,
                               b=b,
                               aa=aa,
                               bb=bb,
                               nrep=nrep,
-                              burning=burning)})
-  
-  
+                              burning=burning)},.progress="text")|>
+    (function(x){names(dimnames(x))<-c("s","r_y","dataset","j");x})()
+
 }
   
 
@@ -246,10 +251,10 @@ sample_z_cond_y_u_x_phi_gamma<-
 
 sample_sigmaepsilon_cond_y_u_x_phi_r2_q_z<-
   function(z,tt,ttildeytildey,tilde_w,hat_tilde_beta){
-    invgamma::rinvgamma(
+    (1/rgamma(
       1, 
       shape=tt/2,  
-      rate =(ttildeytildey-t(hat_tilde_beta)%*%tilde_w%*%hat_tilde_beta)/2 )|>sqrt()
+      rate =(ttildeytildey-t(hat_tilde_beta)%*%tilde_w%*%hat_tilde_beta)/2 ))|>sqrt()
   }
 
 
@@ -266,7 +271,7 @@ sample_tildebeta_cond_y_u_x_phi_r2_q_z_sigma2<-
            tilde_x,
            tilde_w){
     inv_tilde_w<-solve(tilde_w)
-    mvrnorm(n = 1, 
+    MASS::mvrnorm(n = 1, 
             mu = inv_tilde_w%*%t(tilde_x)%*%(tilde_y), 
             Sigma = (sigma_epsilon^2)*inv_tilde_w)
     }
@@ -296,6 +301,7 @@ initial_values_f<-function(y,x){
 #'nrep=default_nrep
 #'burning=default_burning
 Gibbs_q<-function(x,
+                  barvx=barvx_f(x),
                   y,
                   u,
                   a,
@@ -357,3 +363,21 @@ Gibbs_q<-function(x,
 }
 
 
+
+plot_q_1_f<-function(q,tt){
+  require(ggplot2)
+  q[,,1,,drop=TRUE]|>
+    as.data.frame.table(responseName = "q")|>
+    dplyr::mutate(j=strtoi(j),
+                  s=strtoi(levels(s)[s]))->xx
+  xx[1:90,]|>
+    ggplot(aes(x=j,y=q))+
+    geom_line()+
+    facet_grid(s~r_y)
+  xx|>
+    ggplot(aes(x=q,xintercept=s/tt))+
+    geom_histogram()+
+    facet_grid(s~r_y)+
+    geom_vline(mapping = aes(xintercept=s/tt),color="red")
+  
+}
