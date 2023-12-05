@@ -374,28 +374,34 @@ Gibbs_q<-function(x,
 
 
 
-plot_q_1_f<-function(q,tt=default_tt,burning){
+plot_q_1_f<-function(q,k=default_k,burning){
   require(ggplot2)
   q|>
     dplyr::group_by(s,r_y,i)|>
     dplyr::filter(dplyr::row_number()>burning)|>
     dplyr::summarise(Eq=mean(q,na.rm=TRUE))|>
     dplyr::ungroup()|>
+    dplyr::group_by(s,r_y)|>
+    dplyr::mutate(meanEq=mean(Eq,na.rm=TRUE))|>
+    dplyr::ungroup()|>
     ggplot(mapping = aes(x=Eq))+
     geom_histogram()+
+#    geom_histogram(aes(y=..density..),alpha=.5)+
+#    geom_density()+
     facet_grid(s~r_y)+
-    geom_vline(mapping = aes(xintercept=s/tt),color="red")
-  
+    geom_vline(mapping = aes(xintercept=s/k),color="red")+
+    geom_vline(mapping = aes(xintercept=meanEq),color="blue")
 }
 
-plot_q_2_f<-function(q,tt=default_tt,burning){
+plot_q_2_f<-function(q,k=default_k,burning){
   require(ggplot2)
   q|>
     dplyr::filter(s==5,r_y==.02,i==1,dplyr::row_number()>burning)|>
     dplyr::mutate(Eq=mean(q))|>
     ggplot(mapping = aes(x=q))+
-    geom_histogram()+
-    geom_vline(mapping = aes(xintercept=s/tt),color="red")+
+    geom_histogram(aes(y=..density..),color="black",alpha=.5)+
+    geom_density()+
+    geom_vline(mapping = aes(xintercept=s/k),color="red")+
     geom_vline(mapping = aes(xintercept=Eq),color="blue")
   
   
