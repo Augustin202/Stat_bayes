@@ -226,7 +226,7 @@ sample_zi_cond_zj_y_u_x_phi_gamma<-
                                                 gamma2=gamma2))|>
              (function(x){x-max(x)})()
            
-    if(max(logprob,na.rm=TRUE)>-Inf){1}else{
+    if(max(logprob,na.rm=TRUE)==-Inf){1}else{
     sample(0:1,
            size=1,
            prob=logprob|>exp())}
