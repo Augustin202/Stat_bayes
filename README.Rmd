@@ -5,7 +5,39 @@ date: Dec 5, 2023
 output: github_document
 ---
 
-# Stat_bayes
+# Bayesian Statistics, Assignment 2
+
+
+
+
+## Results
+
+
+```{r,echo=FALSE,results="hide"}
+"R"|>list.files(full.names = TRUE)|>sapply(FUN = source)
+"samples_of_q.rda"|>load()|>get()->q
+tt=200
+burning=1000
+```
+
+### Plot 1
+
+```{r,echo=FALSE}
+plot_q_1_f(q,tt,burning)+scale_x_continuous(trans="log10")
+```
+
+We plot the histograms of the empirical means of q by values of s and R2y.
+The red line represents s/k. The blue line represents the mean of the empirical means. We use a log10 scale for the x axis.
+
+### Plot 2
+
+```{r,echo=FALSE}
+plot_q_2_f(q,tt,burning)
+```
+
+
+We plot the histograms of the empirical means of q by values of s and R2y.
+The red line represents s/k. The blue line represents the mean of the empirical means. We use a log10 scale for the x axis.
 
 ## How to run 
 
@@ -24,14 +56,29 @@ renv::dependencies("R")$Package|>unique()|>sort()|>setdiff(c(
 via:
 
 ```{r,eval=FALSE}
-system("git clone https://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@github.com/Augustin202/Stat_bayes.git")
+system("git clone https://github.com/Augustin202/Stat_bayes.git")
 ```
 
 - open the .rproj file in rstudio
-
-- For paper 1, run:
+- run:
 
 ```{r,eval=FALSE}
-library(targets)
-tar_make()
+source(main.R)
 ```
+
+## R code
+
+The R code consists a file R/functions.R that contains all necessary functions to run the main code, a main.R file that will run the main program. The main file generates the data, draw samples of q, creates plots and compiles the Rmd file to create this markdown file, and an Rproj file, all available on github there:.
+
+
+### main.R
+
+```{r, eval=FALSE, file = 'main.R'}
+```
+
+
+### R/functions.R
+
+```{r, eval=FALSE,file = 'R/functions.R'}
+```
+
