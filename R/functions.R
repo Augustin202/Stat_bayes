@@ -10,7 +10,6 @@ default_rho=.75
 default_number_of_datasets=100
 default_s=c(5,10,100)
 default_r_y=c(.02,.25,.5)
-default_barvx=1
 
 default_nrep=110000
 default_burning=10000
@@ -39,6 +38,11 @@ generate_multiple_x<-
                     aperm(2:1)})}
 
 #'@examples
+#'xx=generate_multiple_x(k=default_k,tt=default_tt,rho=default_rho,number_of_datasets=1)[[1]]
+#'barvx_f(xx)
+barvx_f<-function(x){x|>plyr::aaply(2,var)|>mean()}
+
+#'@examples
 #'k=default_k
 #'s=5
 #'draw_beta(s)
@@ -63,7 +67,7 @@ generate_single_y<-function(
                   beta=draw_beta(s)
                   xbeta=xx[,1:s]%*%beta
                   #xbeta=xx[,sample(ncol(xx),size = d$s,replace=FALSE)]%*%beta#we could take the n first one would do the same
-                  sigma_epsilon<-sqrt((1/r_y-1)/T)*abs(xbeta)
+                  sigma_epsilon<-sqrt((1/r_y-1)*mean(xbeta^2))
                   y=xbeta +rnorm(nrow(xx),sd=sigma_epsilon)
                   y}
 #'@examples
@@ -82,24 +86,24 @@ generate_y_sample_q<-function(
   b,
   aa,
   bb,
+  r2_grid,
   nrep,
   burning,
-  x=generate_multiple_x(k=default_k,
-                        tt=default_tt,
-                        rho=default_rho,
-                        number_of_datasets=default_number_of_datasets)){
-  expand.grid(s=s,r_y=r_y,i=1:length(xx))|>
+  x,
+  tt=nrow(x),
+  k=ncol(x)){
+  expand.grid(s=s,r_y=r_y,i=1:length(x))|>
       plyr::daply(~s+r_y+i,
                 function(d){
                   xx<-x[[i]]
                   beta=draw_beta(d$s)
                   xbeta=xx[,1:d$s]%*%beta
                   #xbeta=xx[,sample(ncol(xx),size = d$s,replace=FALSE)]%*%beta#we could take the n first one would do the same
-                  sigma_epsilon<-sqrt((1/d$r_y-1)/T)*abs(xbeta)
+                  sigma_epsilon<-sqrt((1/r_y-1)*mean(xbeta^2))
                   y=xbeta +rnorm(nrow(xx),sd=sigma_epsilon)
-                  
-                  r2_grid=r2_q_grid_generate()
-                  q<-Gibbs_q(x = xx,y = y,u = u,barvx = barvx,tt = tt,k = k,phi = phi,z = z,r2_q_grid = r2_q_grid,a=a,
+                barvx=barvx_f(xx)
+                  q<-Gibbs_q(x = xx,y = y,u = u,barvx = barvx,
+                             tt = tt,k = k,phi = phi,z = z,r2_q_grid = r2_q_grid,a=a,
                               b=b,
                               aa=aa,
                               bb=bb,
@@ -111,12 +115,6 @@ generate_y_sample_q<-function(
   
 
 ## **Question 2 - (I)**
-
-#'@examples
-#'empty_matrix <- matrix(0, 4,  6)
-#'print(empty_matrix)
-#'empty_matrix[1,1:2] <- c(0,1)
-#'print(empty_matrix)
 
 #'@examples
 #'r2_q_grid_generate()|>nrow()|>sqrt()
@@ -251,7 +249,7 @@ sample_sigmaepsilon_cond_y_u_x_phi_r2_q_z<-
     invgamma::rinvgamma(
       1, 
       shape=tt/2,  
-      scale =(ttildeytildey-t(hat_tilde_beta)%*%tilde_w%*%hat_tilde_beta)/2 )|>sqrt()
+      rate =(ttildeytildey-t(hat_tilde_beta)%*%tilde_w%*%hat_tilde_beta)/2 )|>sqrt()
   }
 
 
@@ -304,7 +302,6 @@ Gibbs_q<-function(x,
                   b,
                   aa,
                   bb,
-                  barvx,
                   tt=nrow(x),
                   k=ncol(x),
                   phi,
@@ -322,18 +319,18 @@ Gibbs_q<-function(x,
   tbetabeta=t(tilde_beta)%*%tilde_beta
   tilde_y=y-u%*%phi
   ttildeytildey=t(tilde_y)%*%tilde_y
-  #1.
-  for(i in 1:1000){
+  #I.
+  for(i in 1:nrep){
   r2_q=sample_r2_q_cond_y_u_x_theta_z(sigma_epsilon=sigma_epsilon,barvx=barvx,k=k,a=a,b=b,aa=aa,bb=bb,tbetabeta=tbetabeta,s_z=s_z,r2_q_grid=r2_q_grid)
   r2=r2_q["r2"]
   q=r2_q["q"]
   gamma2=gamma2_f(r2,k,q,barvx)
-#2.
+#II.
   if(FALSE){
   phi=sample_phi()
   tilde_y=y-u%*%phi
   ttildeytildey=t(tilde_y)%*%tilde_y}
-#3.
+#III.
   z=sample_z_cond_y_u_x_phi_gamma(z=z,tilde_y=tilde_y,ttildeytildey = ttildeytildey,
                                   x=x,q=q,tt=tt,k=k,
                                   gamma2=gamma2)
@@ -342,17 +339,18 @@ Gibbs_q<-function(x,
   tilde_w=(t(tilde_x)%*%tilde_x+diag(s_z)/gamma2)
   inv_tilde_w=if(s_z==0){0}else{solve(tilde_w)}
   hat_tilde_beta=inv_tilde_w%*%t(tilde_x)%*%(tilde_y)
-  #4.
+  #IV.
   sigma_epsilon=sample_sigmaepsilon_cond_y_u_x_phi_r2_q_z(
     tt=tt,ttildeytildey=ttildeytildey,tilde_w=tilde_w,
     hat_tilde_beta=hat_tilde_beta)    
+  #V.
   tilde_beta=sample_tildebeta_cond_y_u_x_phi_r2_q_z_sigma2(
     sigma_epsilon=sigma_epsilon,
     tilde_y=tilde_y,
     tilde_x=tilde_x,
     tilde_w=tilde_w)
 
-  print(i)
+  if(i%%1000==0){print(paste0(Sys.time(),i))}
   the_sample<-rbind(the_sample,c(q,s_z,r2,sigma_epsilon))
   }
   the_sample

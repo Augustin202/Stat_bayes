@@ -98,7 +98,7 @@ draw_conditional_posterior_R2_q<-function(Y,U,X,sigma2,phi,beta,z,a,b,A,B){
 
 #'@examples
 #'draw_conditional_posterior_R2_q(Y,U,X,sigma2,phi,beta,z,1,1,1,1)
-#test des fonctions ci dessus 
+#'#test des fonctions ci dessus 
 #' Y<-c(1, 0.5,1, 0.5)
 #' U<-matrix(c(1, 0.5, 0.5, 1, 0.5, 1, 0.5, 1), nrow = 4, byrow = TRUE)
 #' X<-matrix(c(1, 0.2, 0.32, 1, 0.2, 0.45, 0, 1.3, 0.6, 0.45, 0, 2, 0.6, 45, 0, 0.2, 0.6, 0.45, 0, 2, 6, 0.45, 0, 0.2), nrow = 4, byrow = TRUE)
