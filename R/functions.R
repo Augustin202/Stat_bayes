@@ -321,8 +321,9 @@ Gibbs_q<-function(x,
                   phi,
                   r2_q_grid,
                   nrep,
-                  burning){
-  the_sample<-matrix(ncol=4)
+                  burning,testgibbs=FALSE){
+  if(testgibbs){the_sample<-matrix(ncol=4)}
+  qq=vector()
   #Initialise
   initial_values_f(x=x,y=y)->initial_values
   beta=initial_values$beta
@@ -334,7 +335,7 @@ Gibbs_q<-function(x,
   tilde_y=y-u%*%phi
   ttildeytildey=t(tilde_y)%*%tilde_y
   #I.
-  for(i in 1:nrep){
+  for(i in 1:(nrep+burning)){
   r2_q=sample_r2_q_cond_y_u_x_theta_z(sigma_epsilon=sigma_epsilon,barvx=barvx,k=k,a=a,b=b,aa=aa,bb=bb,tbetabeta=tbetabeta,s_z=s_z,r2_q_grid=r2_q_grid)
   r2=r2_q["r2"]
   q=r2_q["q"]
@@ -365,9 +366,10 @@ Gibbs_q<-function(x,
     tilde_w=tilde_w)
 
   if(i%%1000==0){print(paste0(Sys.time(),i))}
-  the_sample<-rbind(the_sample,c(q,s_z,r2,sigma_epsilon))
+  if(testgibbs){the_sample<-rbind(the_sample,c(q,s_z,r2,sigma_epsilon))}else{qq=c(qq,q)}
+  
   }
-  the_sample
+  if(testgibbs){the_sample}else{qq}
 }
 
 
