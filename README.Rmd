@@ -12,11 +12,25 @@ output: github_document
 
 ## Results
 
+
+```{r,echo=FALSE,results="hide"}
+"R"|>list.files(full.names = TRUE)|>sapply(FUN = source)
+"samples_of_q.rda"|>load()|>get()->q
+tt=200
+burning=1000
+```
+
 ### Plot 1
 
+```{r,echo=FALSE}
+plot_q_1_f(q,tt,burning)
+```
 
 ### Plot 2
 
+```{r,echo=FALSE}
+plot_q_2_f(q,tt,burning)
+```
 
 
 ## How to run 

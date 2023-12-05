@@ -9,7 +9,19 @@ Dec 5, 2023
 
 ### Plot 1
 
+    ## Loading required package: ggplot2
+
+    ## `summarise()` has grouped output by 's', 'r_y'. You can override using the
+    ## `.groups` argument.
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](README_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+
 ### Plot 2
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 ## How to run
 
@@ -41,6 +53,49 @@ plots and compiles the Rmd file to create this markdown file, and an
 Rproj file, all available on github there:.
 
 ### main.R
+
+``` r
+library(MASS)# for multivariate normal
+library(glmnet)#for lasso
+
+
+# Run the R scripts in the R/ folder with our custom functions:
+"R"|>list.files(full.names = TRUE)|>sapply(FUN = source)
+
+#model parameters - constants
+k     =default_k
+tt    =default_tt
+
+#model parameters - hyperpriors
+a    =default_a
+b    =default_b
+aa   =default_aa
+bb   =default_bb
+
+#simulations tuning parameters
+rho   =default_rho
+number_of_datasets  =default_number_of_datasets
+s     =default_s
+r_y   =default_r_y
+nrep            =default_nrep
+burning         =default_burning
+
+# Targets list:
+    x=generate_multiple_x(k=k,tt=tt,rho = rho,number_of_datasets = number_of_datasets)
+  #question 2. Generate q 
+    q=generate_y_sample_q(s = s,
+                          r_y = r_y,
+                          a = a,
+                          b = b,
+                          aa = aa,
+                          bb = bb,
+                          nrep = nrep,
+                          burning = burning,
+                          x = x)
+  #question 3. plots 
+    plot_q_1=plot_q_1_f(q,tt,burning)
+    plot_q_2=plot_q_2_f(q,tt)
+```
 
 ### R/functions.R
 
@@ -368,8 +423,9 @@ Gibbs_q<-function(x,
                   phi,
                   r2_q_grid,
                   nrep,
-                  burning){
-  the_sample<-matrix(ncol=4)
+                  burning,testgibbs=FALSE){
+  if(testgibbs){the_sample<-matrix(ncol=4)}
+  qq=vector()
   #Initialise
   initial_values_f(x=x,y=y)->initial_values
   beta=initial_values$beta
@@ -381,7 +437,7 @@ Gibbs_q<-function(x,
   tilde_y=y-u%*%phi
   ttildeytildey=t(tilde_y)%*%tilde_y
   #I.
-  for(i in 1:nrep){
+  for(i in 1:(nrep+burning)){
   r2_q=sample_r2_q_cond_y_u_x_theta_z(sigma_epsilon=sigma_epsilon,barvx=barvx,k=k,a=a,b=b,aa=aa,bb=bb,tbetabeta=tbetabeta,s_z=s_z,r2_q_grid=r2_q_grid)
   r2=r2_q["r2"]
   q=r2_q["q"]
@@ -412,28 +468,38 @@ Gibbs_q<-function(x,
     tilde_w=tilde_w)
 
   if(i%%1000==0){print(paste0(Sys.time(),i))}
-  the_sample<-rbind(the_sample,c(q,s_z,r2,sigma_epsilon))
+  if(testgibbs){the_sample<-rbind(the_sample,c(q,s_z,r2,sigma_epsilon))}else{qq=c(qq,q)}
+  
   }
-  the_sample
+  if(testgibbs){the_sample}else{qq}
 }
 
 
 
-plot_q_1_f<-function(q,tt){
+plot_q_1_f<-function(q,tt=default_tt,burning){
   require(ggplot2)
-  q[,,1,,drop=TRUE]|>
-    as.data.frame.table(responseName = "q")|>
-    dplyr::mutate(j=strtoi(j),
-                  s=strtoi(levels(s)[s]))->xx
-  xx[1:90,]|>
-    ggplot(aes(x=j,y=q))+
-    geom_line()+
-    facet_grid(s~r_y)
-  xx|>
-    ggplot(aes(x=q,xintercept=s/tt))+
+  q|>
+    dplyr::group_by(s,r_y,i)|>
+    dplyr::filter(dplyr::row_number()>burning)|>
+    dplyr::summarise(Eq=mean(q,na.rm=TRUE))|>
+    dplyr::ungroup()|>
+    ggplot(mapping = aes(x=Eq))+
     geom_histogram()+
     facet_grid(s~r_y)+
     geom_vline(mapping = aes(xintercept=s/tt),color="red")
+  
+}
+
+plot_q_2_f<-function(q,tt=default_tt,burning){
+  require(ggplot2)
+  q|>
+    dplyr::filter(s==5,r_y==.02,i==1,dplyr::row_number()>burning)|>
+    dplyr::mutate(Eq=mean(q))|>
+    ggplot(mapping = aes(x=q))+
+    geom_histogram()+
+    geom_vline(mapping = aes(xintercept=s/tt),color="red")+
+    geom_vline(mapping = aes(xintercept=Eq),color="blue")
+  
   
 }
 ```

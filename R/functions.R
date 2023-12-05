@@ -374,20 +374,29 @@ Gibbs_q<-function(x,
 
 
 
-plot_q_1_f<-function(q,tt){
+plot_q_1_f<-function(q,tt=default_tt,burning){
   require(ggplot2)
-  q[,,1,,drop=TRUE]|>
-    as.data.frame.table(responseName = "q")|>
-    dplyr::mutate(j=strtoi(j),
-                  s=strtoi(levels(s)[s]))->xx
-  xx[1:90,]|>
-    ggplot(aes(x=j,y=q))+
-    geom_line()+
-    facet_grid(s~r_y)
-  xx|>
-    ggplot(aes(x=q,xintercept=s/tt))+
+  q|>
+    dplyr::group_by(s,r_y,i)|>
+    dplyr::filter(dplyr::row_number()>burning)|>
+    dplyr::summarise(Eq=mean(q,na.rm=TRUE))|>
+    dplyr::ungroup()|>
+    ggplot(mapping = aes(x=Eq))+
     geom_histogram()+
     facet_grid(s~r_y)+
     geom_vline(mapping = aes(xintercept=s/tt),color="red")
+  
+}
+
+plot_q_2_f<-function(q,tt=default_tt,burning){
+  require(ggplot2)
+  q|>
+    dplyr::filter(s==5,r_y==.02,i==1,dplyr::row_number()>burning)|>
+    dplyr::mutate(Eq=mean(q))|>
+    ggplot(mapping = aes(x=q))+
+    geom_histogram()+
+    geom_vline(mapping = aes(xintercept=s/tt),color="red")+
+    geom_vline(mapping = aes(xintercept=Eq),color="blue")
+  
   
 }

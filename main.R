@@ -36,7 +36,6 @@ burning         =default_burning
                           burning = burning,
                           x = x)
   #question 3. plots 
-    plot_q_1=plot_q_1_f(q,tt)
-    plot_q_2=plot_q_1_f(q,tt)
+    plot_q_1=plot_q_1_f(q,tt,burning)
+    plot_q_2=plot_q_2_f(q,tt)
 
-)
