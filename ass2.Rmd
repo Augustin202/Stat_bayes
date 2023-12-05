@@ -13,21 +13,6 @@ library(glmnet)
 
 ## **Question 2 - (I)**
 
-```{r}
-a = c(0,1)
-print(a)
-print(compute_z(a))
-# Create a matrix of sequences
-my_matrix <- matrix(seq(1, 12, by = 1), nrow = 3, ncol = 4, byrow = TRUE)
-
-# Print the matrix
-print(my_matrix)
-
-empty_matrix <- matrix(c(0,0), 4,  6)
-print(empty_matrix)
-empty_matrix[1,1,] <- c(0,1)
-print(empty_matrix)
-```
 
 ```{r}
 compute_z<-function(beta){
@@ -59,7 +44,7 @@ compute_beta<-function(z, beta_tilde){
 }
 
 sum_var <-function(X){
-  temp <-  apply(X, 2, var)/nrow(X)
+  temp <-  apply(X, 2, var)
   return (sum(temp)/length(temp))
 }
 
@@ -110,6 +95,12 @@ draw_conditional_posterior_R2_q<-function(Y,U,X,sigma2,phi,beta,z,a,b,A,B){
         res2 <- q^(s_z + 0.5*s_z + a -1)
         res3 <-(1-q)^(k-s_z + b -1 )
         res<- (res1*res2*res3*res4*res5)
+        
+        if(0.11 <= q & q <= 0.9){
+          res<-res*0.01
+        }else{
+          res<-res*0.001
+        }
       }
 
       list_prob[i*p+j] <-res
@@ -194,65 +185,12 @@ def_X_tilde<-function(X,z){
 ```
 
 
-```{r}
 
-sample_conditional_posterior_zi_bis<-function(Y,U,X,sigma2,phi,gamma2,z,i){
-  print(1)
-  if(U==0){
-    Y_tilde<- Y
-  }else{
-    Y_tilde<- Y - U%*%phi
-  }
-  T<-length(Y)
-  k<-dim(X)[2]
-  
-  print(2)
-  #cas zi=0
-  z[i]<-0
-  s_z<-sum(z)
-  if (s_z==0){
-    return(1)
-  }else{
-    I_sz <- diag(1, nrow = sum(z), ncol = sum(z))
-    X_tilde<-def_X_tilde(X,z)
-    W_tilde<-t(X_tilde)%*%X_tilde + I_sz/gamma2
-    beta_tilde_hat<-solve(W_tilde)%*%t(X_tilde)%*%Y_tilde
-    proba_0<-((t(Y_tilde)%*%Y_tilde - t(beta_tilde_hat)%*%W_tilde%*%beta_tilde_hat)/2 )
-    print(proba_0)
-    proba_0<-proba_0^(-T/2)
-    print(proba_0)
-    proba_0<-proba_0*det(W_tilde)^0.5*gamma(T/2)*q^s_z*(1-q)^(k-s_z)*(1/gamma2)^(s_z/2)
-    print(proba_0)
-  }
-
-  print(3)
-
-  #cas zi=1
-  z[i]<-1
-  s_z<-sum(z)
-  I_sz <- diag(1, nrow = sum(z), ncol = sum(z))
-  X_tilde<-def_X_tilde(X,z)
-  W_tilde<-t(X_tilde)%*%X_tilde + I_sz/gamma2
-  beta_tilde_hat<-solve(W_tilde)%*%t(X_tilde)%*%Y_tilde
-  proba_1<- (t(Y_tilde)%*%Y_tilde - t(beta_tilde_hat)%*%W_tilde%*%beta_tilde_hat)/2 
-  proba_1<-proba_1^(-T/2)
-  proba_1<-proba_1*det(W_tilde)^0.5*gamma(T/2)*q^s_z*(1-q)^(k-s_z)*(1/gamma2)^(s_z/2)
-  
-  p<-proba_1/(proba_1+proba_0)
-  print('proba')
-  print(proba_0)
-  print(proba_1)
-  print(p)
-  print('fin')
-  return (rbinom(1, size = 1, prob = p))
-}
-
-```
 
 
 ```{r}
 #cette fonction a une méthode de calcul de p qui est mieux que celle d'avant. Celle d'avant à cause de probmème de puissance renvoyait toujours 0 pour les deux proba et donc P = nan. Ce n'est pas le cas avec cette fonction
-sample_conditional_posterior_zi<-function(Y,U,X,sigma2,phi,gamma2,z,i){
+sample_conditional_posterior_zi<-function(Y,U,X,sigma2,phi,gamma2,q,z,i){
   if(U==0){
     Y_tilde<- Y
   }else{
@@ -302,10 +240,8 @@ sample_conditional_posterior_z<-function(Y,U,X,phi,R2,q,z0){
   k<-dim(X)[2]
   v_X <- sum_var(X)
   gamma2<-R2/(k*q*v_X*(1-R2))
-    for (j in 1:1) {
-    for (i in 1:length(z0)) {
-      z0[i]<-sample_conditional_posterior_zi(Y,U,X,sigma2,phi,gamma2,z0,i)
-  }
+  for (i in 1:length(z0)) {
+    z0[i]<-sample_conditional_posterior_zi(Y,U,X,sigma2,phi,gamma2,q,z0,i)
   }
   return (z0)
 }
@@ -348,7 +284,7 @@ sample_conditional_posterior_sigma2<-function(Y,U,X,phi,R2, q, z){
   W_tilde<-t(X_tilde)%*%X_tilde + I_sz/gamma2
   beta_tilde_hat <- solve(W_tilde)%*%t(X_tilde)%*%Y_tilde
   scale<-t(beta_tilde_hat)%*%W_tilde%*%beta_tilde_hat
-  scale<- t(Y)%*%Y - scale
+  scale<- t(Y_tilde)%*%Y_tilde - scale
   scale<-scale/2
   echantillon_inverse_gamma <- rinvgamma(1, shape = shape, rate = scale)
   return (echantillon_inverse_gamma)
@@ -416,6 +352,7 @@ sample_data0<-function(T,k,rho,s,Ry){
   corr_matrix <- toeplitz(rho^(0:(k-1)))
   mu <- rep(0, times = k)
   X<-mvrnorm(n = T, mu = mu, Sigma = corr_matrix)
+  X <- scale(X)
   beta<-mvrnorm(n = k, mu = 0, Sigma = 1)
   indices_zeros <- sample(length(beta), size = k-s)
   beta[indices_zeros] <- 0
@@ -433,6 +370,8 @@ sample_data0<-function(T,k,rho,s,Ry){
 
 
 ```{R}
+N<-6000
+
 a<-1
 A<-1
 b<-1
@@ -440,21 +379,24 @@ B<-1
 
 T<-200
 k<-100
-Ry<-0.25
 rho<-0.75
-s<-5
+U<-0
+phi<-0
+
+Ry<-0.25
+s<-10
+
 res<-sample_data0(T,k,rho,s,Ry)
 X<-res[1][[1]]
 Y<-res[2][[1]]
-U<-0
 beta<-res[3][[1]]
-sigma2<-sum(sapply(X%*%beta, function(x) x^2))*(1/Ry-1)/T
+sigma2<-var(Y-X%*%beta)
 phi<-0
 z <- compute_z(beta)
 s_z<-sum(z)
-
-
-for(i in 1:1000){
+list_R2 <- vector(mode="numeric", length=N)
+list_q <- vector(mode="numeric", length=N)
+for(i in 1:N){
   if (i %% 50 == 0) {
     print(i)
   }
@@ -465,20 +407,16 @@ for(i in 1:1000){
   sigma2<-sample_conditional_posterior_sigma2(Y,U,X,phi,R2, q, z)
   beta_tilde<-sample_conditional_posterior_beta_tilde(Y,U,X,phi,R2,q,sigma2,z)
   beta<-compute_beta(z,beta_tilde)
+  list_R2[i]<-R2
+  list_q[i]<-q
 }
 
+#print(list_R2)
+#print(list_q)
 ```
 
 ```{R}
-a<-1
-A<-1
-b<-1
-B<-1
+hist(list_R2, main = "Histogramme de R2", xlab = "Valeurs", ylab = "Fréquence", col = "skyblue", border = "black")
+hist(list_q, main = "Histogramme de q", xlab = "Valeurs", ylab = "Fréquence", col = "skyblue", border = "black")
 
-T<-200
-k<-100
-Ry<-0.25
-rho<-0.75
-s<-5
-res<-sample_data0(T,k,rho,s,Ry)
 ```
