@@ -5,7 +5,19 @@ date: Dec 5, 2023
 output: github_document
 ---
 
-# Stat_bayes
+# Bayesian Statistics, Assignment 2
+
+
+
+
+## Results
+
+### Plot 1
+
+
+### Plot 2
+
+
 
 ## How to run 
 
@@ -24,14 +36,29 @@ renv::dependencies("R")$Package|>unique()|>sort()|>setdiff(c(
 via:
 
 ```{r,eval=FALSE}
-system("git clone https://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@github.com/Augustin202/Stat_bayes.git")
+system("git clone https://github.com/Augustin202/Stat_bayes.git")
 ```
 
 - open the .rproj file in rstudio
-
-- For paper 1, run:
+- run:
 
 ```{r,eval=FALSE}
-library(targets)
-tar_make()
+source(main.R)
 ```
+
+## R code
+
+The R code consists a file R/functions.R that contains all necessary functions to run the main code, a main.R file that will run the main program. The main file generates the data, draw samples of q, creates plots and compiles the Rmd file to create this markdown file, and an Rproj file, all available on github there:.
+
+
+### main.R
+
+```{r, eval=FALSE, file = 'main.R'}
+```
+
+
+### R/functions.R
+
+```{r, eval=FALSE,file = 'R/functions.R'}
+```
+
