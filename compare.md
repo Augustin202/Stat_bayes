@@ -7,7 +7,7 @@ Dec 5, 2023
 
 ## Comparaison of Augustin and Daniel samplers
 
-### Test sampler 1
+### Test sampler r2 q
 
 ``` r
 a=default_a
@@ -41,8 +41,9 @@ plot(sort(dan[,1]),sort(aug[,1]));abline(0,1,col='red')
 plot(sort(dan[,2]),sort(aug[,2]));abline(0,1,col='red')
 ```
 
-![](compare_files/figure-gfm/unnamed-chunk-3-2.png)<!-- --> \#\#\# Test
-sampler 2
+![](compare_files/figure-gfm/unnamed-chunk-3-2.png)<!-- -->
+
+### Test sampler z\_i
 
 ``` r
 a=default_a
@@ -78,11 +79,11 @@ dan=sample_zi_cond_zj_y_u_x_phi_gamma(z,i=1,tilde_y,ttildeytildey,xx,q,tt,k,gamm
 mean(aug);mean(dan)
 ```
 
-    FALSE [1] 0.977
+    FALSE [1] 0.309
 
-    FALSE [1] 0.975
+    FALSE [1] 0.299
 
-### Test sampler 3
+### Test sampler z
 
 ``` r
 a=default_a
@@ -126,7 +127,7 @@ plot(sort(aug|>plyr::aaply(1,mean)),sort(dan|>plyr::aaply(1,mean)));abline(0,1,c
 
 ![](compare_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
 
-### Test sampler 4
+### Test sampler sigma2
 
 ``` r
 a=default_a
@@ -207,9 +208,7 @@ plot(aug,dan);abline(0,1,col='red')
 
 ![](compare_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-### V. test sampler 5
-
-## **Question 2 - (V)**
+### V. test sampler beta
 
 ``` r
 a=default_a

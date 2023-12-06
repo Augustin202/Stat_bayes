@@ -18,7 +18,7 @@ knitr::opts_chunk$set(error=FALSE, warning=FALSE,comment=FALSE,message=FALSE)
 ```
 
 
-### Test sampler 1
+### I Test sampler r2 q
 
 ```{r}
 a=default_a
@@ -47,7 +47,9 @@ plot(sort(dan[,1]),sort(aug[,1]));abline(0,1,col='red')
 plot(sort(dan[,2]),sort(aug[,2]));abline(0,1,col='red')
 ```
 
-### Test sampler 2
+
+### II Test sampler  z_i
+
 
 ```{r}
 a=default_a
@@ -83,7 +85,7 @@ dan=sample_zi_cond_zj_y_u_x_phi_gamma(z,i=1,tilde_y,ttildeytildey,xx,q,tt,k,gamm
 mean(aug);mean(dan)
 ```
 
-### Test sampler 3
+### II Test sampler z
 
 ```{r}
 a=default_a
@@ -120,7 +122,7 @@ plot(aug|>plyr::aaply(2,mean),dan|>plyr::aaply(2,mean));abline(0,1,col="red")
 plot(sort(aug|>plyr::aaply(1,mean)),sort(dan|>plyr::aaply(1,mean)));abline(0,1,col="red")
 ```
 
-### Test sampler 4
+### IV Test sampler sigma2
 
 ```{r}
 a=default_a
@@ -179,9 +181,8 @@ dan=sample_sigmaepsilon_cond_y_u_x_phi_r2_q_z(z,tt,ttildeytildey,tilde_w,hat_til
 plot(aug,dan);abline(0,1,col='red')
 ```
 
-### V. test sampler 5
+### V. test sampler beta
 
-## **Question 2 - (V)**
 ```{r}
 a=default_a
 b=default_b
