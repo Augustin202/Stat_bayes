@@ -45,6 +45,12 @@ r2_q_grid=r2_q_grid_generate()
 dan=sample_r2_q_cond_y_u_x_theta_z(sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid,m=m)
 plot(sort(dan[,1]),sort(aug[,1]));abline(0,1,col='red')
 plot(sort(dan[,2]),sort(aug[,2]));abline(0,1,col='red')
+cbind("Daniel"=
+system.time(plyr::r_ply(100,sample_r2_q_cond_y_u_x_theta_z(sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid,m=1))),
+Augustin=
+system.time(plyr::r_ply(100,draw_conditional_posterior_R2_q(m,Y,U,X,sigma2,phi,beta,z,a,b,A,B))))
+
+
 ```
 
 
@@ -83,6 +89,11 @@ tt=default_tt
 aug=sample_conditional_posterior_zi(Y,U,X,sigma2,phi,gamma2_aug,q,z,i=1,m=m)
 dan=sample_zi_cond_zj_y_u_x_phi_gamma(z,i=1,tilde_y,ttildeytildey,xx,q,tt,k,gamma2,m=m)
 mean(aug);mean(dan)
+cbind("Daniel"=
+system.time(plyr::r_ply(100,sample_zi_cond_zj_y_u_x_phi_gamma(z,i=1,tilde_y,ttildeytildey,xx,q,tt,k,gamma2,m=1))),
+Augustin=
+system.time(plyr::r_ply(100,sample_conditional_posterior_zi(Y,U,X,sigma2,phi,gamma2_aug,q,z,i=1,m=1))))
+
 ```
 
 ### II Test sampler z
@@ -120,6 +131,11 @@ aug=plyr::raply(100,sample_conditional_posterior_z(Y,U,X,phi,R2,q,z))
 dan=plyr::raply(100,sample_z_cond_y_u_x_phi_gamma(z,tilde_y,ttildeytildey,x,q,tt,k,gamma2))
 plot(aug|>plyr::aaply(2,mean),dan|>plyr::aaply(2,mean));abline(0,1,col="red")
 plot(sort(aug|>plyr::aaply(1,mean)),sort(dan|>plyr::aaply(1,mean)));abline(0,1,col="red")
+cbind("Daniel"=
+system.time(plyr::r_ply(100,sample_z_cond_y_u_x_phi_gamma(z,tilde_y,ttildeytildey,x,q,tt,k,gamma2))),
+Augustin=
+system.time(plyr::r_ply(100,sample_conditional_posterior_z(Y,U,X,phi,R2,q,z))))
+
 ```
 
 ### IV Test sampler sigma2
@@ -179,6 +195,11 @@ rate_dan=(ttildeytildey-t(hat_tilde_beta)%*%tilde_w%*%hat_tilde_beta)/2
 aug=sample_conditional_posterior_sigma2(Y,U,X,phi,R2, q, z,m=m)|>sort()
 dan=sample_sigmaepsilon_cond_y_u_x_phi_r2_q_z(z,tt,ttildeytildey,tilde_w,hat_tilde_beta,m=m)|>(`^`)(2)|>sort()
 plot(aug,dan);abline(0,1,col='red')
+
+cbind("Daniel"=
+system.time(plyr::r_ply(100,sample_sigmaepsilon_cond_y_u_x_phi_r2_q_z(z,tt,ttildeytildey,tilde_w,hat_tilde_beta,m=1))),
+Augustin=
+system.time(plyr::r_ply(100,sample_conditional_posterior_sigma2(Y,U,X,phi,R2, q, z,m=1))))
 ```
 
 ### V. test sampler beta
@@ -246,3 +267,10 @@ dan=sample_tildebeta_cond_y_u_x_phi_r2_q_z_sigma2(sigma_epsilon,tilde_y,tilde_x,
 plot(aug[1,],dan[1,]);abline(0,1,col='red')
 plot(aug[,1]|>sort(),dan[,1]|>sort());abline(0,1,col='red')
 ```
+
+### Test gibbs one step.
+
+
+
+
+

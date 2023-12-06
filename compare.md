@@ -7,7 +7,7 @@ Dec 5, 2023
 
 ## Comparaison of Augustin and Daniel samplers
 
-### Test sampler r2 q
+### I Test sampler r2 q
 
 ``` r
 a=default_a
@@ -43,7 +43,21 @@ plot(sort(dan[,2]),sort(aug[,2]));abline(0,1,col='red')
 
 ![](compare_files/figure-gfm/unnamed-chunk-3-2.png)<!-- -->
 
-### Test sampler z\_i
+``` r
+cbind("Daniel"=
+system.time(plyr::r_ply(100,sample_r2_q_cond_y_u_x_theta_z(sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid,m=1))),
+Augustin=
+system.time(plyr::r_ply(100,draw_conditional_posterior_R2_q(m,Y,U,X,sigma2,phi,beta,z,a,b,A,B))))
+```
+
+    FALSE            Daniel Augustin
+    FALSE user.self   1.124   16.047
+    FALSE sys.self    0.024    0.012
+    FALSE elapsed     1.147   16.060
+    FALSE user.child  0.000    0.000
+    FALSE sys.child   0.000    0.000
+
+### II Test sampler z\_i
 
 ``` r
 a=default_a
@@ -79,11 +93,25 @@ dan=sample_zi_cond_zj_y_u_x_phi_gamma(z,i=1,tilde_y,ttildeytildey,xx,q,tt,k,gamm
 mean(aug);mean(dan)
 ```
 
-    FALSE [1] 0.309
+    FALSE [1] 0.53
 
-    FALSE [1] 0.299
+    FALSE [1] 0.561
 
-### Test sampler z
+``` r
+cbind("Daniel"=
+system.time(plyr::r_ply(100,sample_zi_cond_zj_y_u_x_phi_gamma(z,i=1,tilde_y,ttildeytildey,xx,q,tt,k,gamma2,m=1))),
+Augustin=
+system.time(plyr::r_ply(100,sample_conditional_posterior_zi(Y,U,X,sigma2,phi,gamma2_aug,q,z,i=1,m=1))))
+```
+
+    FALSE            Daniel Augustin
+    FALSE user.self   0.197    0.236
+    FALSE sys.self    0.016    0.011
+    FALSE elapsed     0.213    0.248
+    FALSE user.child  0.000    0.000
+    FALSE sys.child   0.000    0.000
+
+### II Test sampler z
 
 ``` r
 a=default_a
@@ -127,7 +155,21 @@ plot(sort(aug|>plyr::aaply(1,mean)),sort(dan|>plyr::aaply(1,mean)));abline(0,1,c
 
 ![](compare_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
 
-### Test sampler sigma2
+``` r
+cbind("Daniel"=
+system.time(plyr::r_ply(100,sample_z_cond_y_u_x_phi_gamma(z,tilde_y,ttildeytildey,x,q,tt,k,gamma2))),
+Augustin=
+system.time(plyr::r_ply(100,sample_conditional_posterior_z(Y,U,X,phi,R2,q,z))))
+```
+
+    FALSE            Daniel Augustin
+    FALSE user.self  12.403   16.816
+    FALSE sys.self    0.000    0.000
+    FALSE elapsed    12.403   16.815
+    FALSE user.child  0.000    0.000
+    FALSE sys.child   0.000    0.000
+
+### IV Test sampler sigma2
 
 ``` r
 a=default_a
@@ -207,6 +249,20 @@ plot(aug,dan);abline(0,1,col='red')
 ```
 
 ![](compare_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+``` r
+cbind("Daniel"=
+system.time(plyr::r_ply(100,sample_sigmaepsilon_cond_y_u_x_phi_r2_q_z(z,tt,ttildeytildey,tilde_w,hat_tilde_beta,m=1))),
+Augustin=
+system.time(plyr::r_ply(100,sample_conditional_posterior_sigma2(Y,U,X,phi,R2, q, z,m=1))))
+```
+
+    FALSE            Daniel Augustin
+    FALSE user.self    0.01    0.291
+    FALSE sys.self     0.00    0.000
+    FALSE elapsed      0.01    0.291
+    FALSE user.child   0.00    0.000
+    FALSE sys.child    0.00    0.000
 
 ### V. test sampler beta
 
@@ -310,3 +366,5 @@ plot(aug[,1]|>sort(),dan[,1]|>sort());abline(0,1,col='red')
 ```
 
 ![](compare_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+
+### Test gibbs one step.
