@@ -92,6 +92,10 @@ generate_single_y<-function(
 #'r2_q_grid=r2_q_grid_generate()
 #'generate_y_sample_q(x,s,r_y,a,b,aa,bb,r2_q_grid,nrep,burning)
 
+simulation_parameters<-function(s,r_y,number_of_datasets){
+  expand.grid(s=s,r_y=r_y,i=1:number_of_datasets)
+}
+
 generate_y_sample_q<-function(
   x,
   u,
@@ -104,7 +108,8 @@ generate_y_sample_q<-function(
   r2_q_grid,
   nrep,
   burning){
-  expand.grid(s=s,r_y=r_y,i=1:length(x))|>
+  number_of_datasets=length(x)
+  simulation_parameters(s,r_y,number_of_datasets)|>
       plyr::daply(~s+r_y+i,
                 function(d){
                   xx<-x[[d$i]]
@@ -122,7 +127,8 @@ generate_y_sample_q<-function(
                               aa=aa,
                               bb=bb,
                               nrep=nrep,
-                              burning=burning)},.progress="text")|>
+                              burning=burning)},
+                .progress="text")|>
     (function(x){names(dimnames(x))<-c("s","r_y","dataset","j");x})()
 
 }
@@ -134,20 +140,19 @@ generate_y_sample_q<-function(
 #'r2_q_grid_generate()|>nrow()|>sqrt()
 #'
 r2_q_grid_generate<-function(){
-  base_grid=c(seq(0,.1,by=.001),
-             seq(.11,.9,by=.01),
+  base_grid=c(seq(0,.099,by=.001),
+             seq(.1,.9,by=.01),
              seq(.901,1,by=.001))
-  dbase_grid=c(.0005,rep(.001,99),.0055,
-              rep(.01,79),.0055,
-              rep(.001,99),.0005)
+  dbase_grid<-(base_grid-c(0,base_grid[-length(base_grid)]))/2+
+    (c(base_grid[-1],1)-base_grid)/2
+  #dbase_grid=c(.0005,rep(.001,99),.0055,
+  #            rep(.01,79),.0055,
+  #            rep(.001,99),.0005)
   cbind(
-  expand.grid(q=base_grid,
-              r2=base_grid),
-  expand.grid(dq=dbase_grid,
-              dr2=dbase_grid))|>
+    expand.grid(q=base_grid,r2=base_grid),
+    expand.grid(dq=dbase_grid,dr2=dbase_grid))|>
     dplyr::mutate(dqdr2=dq*dr2)|>
-    dplyr::select(q,r2,dqdr2)
-}
+    dplyr::select(q,r2,dqdr2)}
 
 
 generate_u<-function(tt=default_tt){u=matrix(0,tt,1)}
@@ -251,10 +256,17 @@ sample_z_cond_y_u_x_phi_gamma<-
            x,q,tt,k,
            gamma2){
     for(i in 1:k){
-      z[i]=
-      sample_zi_cond_zj_y_u_x_phi_gamma(z=z,i=i,tilde_y=tilde_y,ttildeytildey=ttildeytildey,
-                                        x=x,q=q,tt=tt,k=k,
-                                        gamma2=gamma2)}
+      z[i]<-
+      sample_zi_cond_zj_y_u_x_phi_gamma(
+        z=z,
+        i=i,
+        tilde_y=tilde_y,
+        ttildeytildey=ttildeytildey,
+        x=x,
+        q=q,
+        tt=tt,
+        k=k,
+        gamma2=gamma2)}
     z}
 
 
@@ -334,7 +346,8 @@ Gibbs_q<-function(x,
   if(testgibbs){the_sample<-matrix(ncol=4)}
   qq=vector()
   #Initialise
-  initial_values_f(x=x,y=y)->initial_values
+  initial_values_f(x=x,y=y)->
+    initial_values
   beta=initial_values$beta
   z=beta!=0
   s_z=sum(z)
@@ -355,8 +368,13 @@ Gibbs_q<-function(x,
   tilde_y=y-u%*%phi
   ttildeytildey=t(tilde_y)%*%tilde_y}
 #III.
-  z=sample_z_cond_y_u_x_phi_gamma(z=z,tilde_y=tilde_y,ttildeytildey = ttildeytildey,
-                                  x=x,q=q,tt=tt,k=k,
+  z=sample_z_cond_y_u_x_phi_gamma(z=z,
+                                  tilde_y=tilde_y,
+                                  ttildeytildey = ttildeytildey,
+                                  x=x,
+                                  q=q,
+                                  tt=tt,
+                                  k=k,
                                   gamma2=gamma2)
   s_z=sum(z)
   tilde_x=x[,z==1]
@@ -378,8 +396,7 @@ Gibbs_q<-function(x,
   if(testgibbs){the_sample<-rbind(the_sample,c(q,s_z,r2,sigma_epsilon))}else{qq=c(qq,q)}
   
   }
-  if(testgibbs){the_sample}else{qq}
-}
+  if(testgibbs){the_sample}else{qq}}
 
 
 
@@ -399,8 +416,7 @@ plot_q_1_f<-function(q,k=default_k,burning){
 #    geom_density()+
     facet_grid(s~r_y)+
     geom_vline(mapping = aes(xintercept=s/k),color="red")+
-    geom_vline(mapping = aes(xintercept=meanEq),color="blue")
-}
+    geom_vline(mapping = aes(xintercept=meanEq),color="blue")}
 
 plot_q_2_f<-function(q,k=default_k,burning){
   require(ggplot2)
@@ -411,7 +427,4 @@ plot_q_2_f<-function(q,k=default_k,burning){
     geom_histogram(aes(y=..density..),color="black",alpha=.5)+
     geom_density()+
     geom_vline(mapping = aes(xintercept=s/k),color="red")+
-    geom_vline(mapping = aes(xintercept=Eq),color="blue")
-  
-  
-}
+    geom_vline(mapping = aes(xintercept=Eq),color="blue")}

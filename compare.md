@@ -51,9 +51,9 @@ system.time(plyr::r_ply(100,draw_conditional_posterior_R2_q(m,Y,U,X,sigma2,phi,b
 ```
 
     FALSE            Daniel Augustin
-    FALSE user.self   1.541   24.358
-    FALSE sys.self    0.048    0.004
-    FALSE elapsed     1.588   24.363
+    FALSE user.self   1.198   20.450
+    FALSE sys.self    0.031    0.000
+    FALSE elapsed     1.230   20.451
     FALSE user.child  0.000    0.000
     FALSE sys.child   0.000    0.000
 
@@ -111,15 +111,15 @@ cbind(q=q,r2=r2,Daniel=loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(r2,q,sigm
   summary(alllogprobs$Daniel[alllogprobs$Augustin==-Inf])
 ```
 
-    FALSE     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-    FALSE -83473.9  -3293.1  -1663.5  -4144.0  -1078.1   -656.4
+    FALSE       Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
+    FALSE -1757327.2    -2236.4    -1253.0   -19964.0     -906.3     -712.3
 
 ``` r
   summary(alllogprobs$Daniel[alllogprobs$Augustin!=-Inf])
 ```
 
     FALSE    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    FALSE  -703.5  -284.6  -208.7  -251.1  -168.3  -145.0
+    FALSE  -708.6  -321.4  -226.8  -276.5  -182.2  -152.1
 
 ``` r
     alllogprobs|>
@@ -166,9 +166,9 @@ dan=sample_zi_cond_zj_y_u_x_phi_gamma(z,i=1,tilde_y,ttildeytildey,xx,q,tt,k,gamm
 mean(aug);mean(dan)
 ```
 
-    FALSE [1] 0.276
+    FALSE [1] 0.305
 
-    FALSE [1] 0.274
+    FALSE [1] 0.296
 
 ``` r
 cbind("Daniel"=
@@ -178,9 +178,9 @@ system.time(plyr::r_ply(100,sample_conditional_posterior_zi(Y,U,X,sigma2,phi,gam
 ```
 
     FALSE            Daniel Augustin
-    FALSE user.self   0.262    0.305
+    FALSE user.self   0.213    0.251
     FALSE sys.self    0.000    0.000
-    FALSE elapsed     0.262    0.304
+    FALSE elapsed     0.214    0.251
     FALSE user.child  0.000    0.000
     FALSE sys.child   0.000    0.000
 
@@ -236,9 +236,9 @@ system.time(plyr::r_ply(100,sample_conditional_posterior_z(Y,U,X,phi,R2,q,z))))
 ```
 
     FALSE            Daniel Augustin
-    FALSE user.self  14.541   19.989
+    FALSE user.self  12.681   16.000
     FALSE sys.self    0.000    0.000
-    FALSE elapsed    14.543   19.991
+    FALSE elapsed    12.681   16.001
     FALSE user.child  0.000    0.000
     FALSE sys.child   0.000    0.000
 
@@ -331,9 +331,9 @@ system.time(plyr::r_ply(100,sample_conditional_posterior_sigma2(Y,U,X,phi,R2, q,
 ```
 
     FALSE            Daniel Augustin
-    FALSE user.self   0.011    0.342
+    FALSE user.self   0.009    0.277
     FALSE sys.self    0.000    0.000
-    FALSE elapsed     0.012    0.343
+    FALSE elapsed     0.009    0.276
     FALSE user.child  0.000    0.000
     FALSE sys.child   0.000    0.000
 
