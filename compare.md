@@ -51,9 +51,9 @@ system.time(plyr::r_ply(100,draw_conditional_posterior_R2_q(m,Y,U,X,sigma2,phi,b
 ```
 
     FALSE            Daniel Augustin
-    FALSE user.self   1.249   17.096
-    FALSE sys.self    0.024    0.000
-    FALSE elapsed     1.273   17.100
+    FALSE user.self   1.541   24.358
+    FALSE sys.self    0.048    0.004
+    FALSE elapsed     1.588   24.363
     FALSE user.child  0.000    0.000
     FALSE sys.child   0.000    0.000
 
@@ -67,12 +67,68 @@ q<-runif(m)
 R2<-r2<-runif(m)
 
 cbind(q=q,r2=r2,Daniel=loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z),
-        Augustin=likelihood_conditional_posterior_R2_q(R2,q,Y,U,X,sigma2,phi,beta,z,a,b,A,B,correction=FALSE)|>log())|>as.data.frame()|>
-  dplyr::mutate()|>
+        Augustin=likelihood_conditional_posterior_R2_q(R2,q,Y,U,X,sigma2,phi,beta,z,a,b,A,B,correction=FALSE)|>log())|>as.data.frame()->
+  alllogprobs
+
+  alllogprobs|>
   ggplot(aes(x=Daniel,y=Augustin))+geom_point()
 ```
 
 ![](compare_files/figure-gfm/unnamed-chunk-3-3.png)<!-- -->
+
+``` r
+  alllogprobs|>
+  ggplot(aes(x=q,y=r2,alpha=abs((Daniel-Augustin)/(Daniel+Augustin)),
+             colour=factor(sign((Daniel-Augustin)/(Daniel+Augustin)))))+geom_point()
+```
+
+![](compare_files/figure-gfm/unnamed-chunk-3-4.png)<!-- -->
+
+``` r
+  alllogprobs|>
+  ggplot(aes(x=q,y=r2),fill=factor(Daniel==-Inf))+geom_point()
+```
+
+![](compare_files/figure-gfm/unnamed-chunk-3-5.png)<!-- -->
+
+``` r
+  alllogprobs|>
+    dplyr::filter(Augustin==-Inf)|>
+  ggplot(aes(x=q,y=r2))+geom_point()
+```
+
+![](compare_files/figure-gfm/unnamed-chunk-3-6.png)<!-- -->
+
+``` r
+  alllogprobs|>
+    dplyr::filter(Augustin>-Inf)|>
+  ggplot(aes(x=q,y=r2))+geom_point()
+```
+
+![](compare_files/figure-gfm/unnamed-chunk-3-7.png)<!-- -->
+
+``` r
+  summary(alllogprobs$Daniel[alllogprobs$Augustin==-Inf])
+```
+
+    FALSE     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    FALSE -83473.9  -3293.1  -1663.5  -4144.0  -1078.1   -656.4
+
+``` r
+  summary(alllogprobs$Daniel[alllogprobs$Augustin!=-Inf])
+```
+
+    FALSE    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    FALSE  -703.5  -284.6  -208.7  -251.1  -168.3  -145.0
+
+``` r
+    alllogprobs|>
+      dplyr::filter(Augustin>=-200)|>
+  ggplot(aes(x=q,y=r2,alpha=abs((Daniel-Augustin)/(Daniel+Augustin)),
+             colour=factor(sign((Daniel-Augustin)/(Daniel+Augustin)))))+geom_point()
+```
+
+![](compare_files/figure-gfm/unnamed-chunk-3-8.png)<!-- -->
 
 ### II Test sampler z\_i
 
@@ -110,9 +166,9 @@ dan=sample_zi_cond_zj_y_u_x_phi_gamma(z,i=1,tilde_y,ttildeytildey,xx,q,tt,k,gamm
 mean(aug);mean(dan)
 ```
 
-    FALSE [1] 0.986
+    FALSE [1] 0.276
 
-    FALSE [1] 0.989
+    FALSE [1] 0.274
 
 ``` r
 cbind("Daniel"=
@@ -122,9 +178,9 @@ system.time(plyr::r_ply(100,sample_conditional_posterior_zi(Y,U,X,sigma2,phi,gam
 ```
 
     FALSE            Daniel Augustin
-    FALSE user.self   0.214    0.259
-    FALSE sys.self    0.004    0.012
-    FALSE elapsed     0.218    0.271
+    FALSE user.self   0.262    0.305
+    FALSE sys.self    0.000    0.000
+    FALSE elapsed     0.262    0.304
     FALSE user.child  0.000    0.000
     FALSE sys.child   0.000    0.000
 
@@ -180,9 +236,9 @@ system.time(plyr::r_ply(100,sample_conditional_posterior_z(Y,U,X,phi,R2,q,z))))
 ```
 
     FALSE            Daniel Augustin
-    FALSE user.self  11.850   16.296
-    FALSE sys.self    0.000    0.015
-    FALSE elapsed    11.855   16.339
+    FALSE user.self  14.541   19.989
+    FALSE sys.self    0.000    0.000
+    FALSE elapsed    14.543   19.991
     FALSE user.child  0.000    0.000
     FALSE sys.child   0.000    0.000
 
@@ -275,9 +331,9 @@ system.time(plyr::r_ply(100,sample_conditional_posterior_sigma2(Y,U,X,phi,R2, q,
 ```
 
     FALSE            Daniel Augustin
-    FALSE user.self   0.011    0.336
+    FALSE user.self   0.011    0.342
     FALSE sys.self    0.000    0.000
-    FALSE elapsed     0.011    0.337
+    FALSE elapsed     0.012    0.343
     FALSE user.child  0.000    0.000
     FALSE sys.child   0.000    0.000
 

@@ -60,12 +60,36 @@ q<-runif(m)
 R2<-r2<-runif(m)
 
 cbind(q=q,r2=r2,Daniel=loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z),
-        Augustin=likelihood_conditional_posterior_R2_q(R2,q,Y,U,X,sigma2,phi,beta,z,a,b,A,B,correction=FALSE)|>log())|>as.data.frame()|>
-  dplyr::mutate()|>
+        Augustin=likelihood_conditional_posterior_R2_q(R2,q,Y,U,X,sigma2,phi,beta,z,a,b,A,B,correction=FALSE)|>log())|>as.data.frame()->
+  alllogprobs
+
+  alllogprobs|>
   ggplot(aes(x=Daniel,y=Augustin))+geom_point()
 
 
+  alllogprobs|>
+  ggplot(aes(x=q,y=r2,alpha=abs((Daniel-Augustin)/(Daniel+Augustin)),
+             colour=factor(sign((Daniel-Augustin)/(Daniel+Augustin)))))+geom_point()
 
+  alllogprobs|>
+  ggplot(aes(x=q,y=r2),fill=factor(Daniel==-Inf))+geom_point()
+  alllogprobs|>
+    dplyr::filter(Augustin==-Inf)|>
+  ggplot(aes(x=q,y=r2))+geom_point()
+  alllogprobs|>
+    dplyr::filter(Augustin>-Inf)|>
+  ggplot(aes(x=q,y=r2))+geom_point()
+  
+  summary(alllogprobs$Daniel[alllogprobs$Augustin==-Inf])
+  summary(alllogprobs$Daniel[alllogprobs$Augustin!=-Inf])
+
+    alllogprobs|>
+      dplyr::filter(Augustin>=-200)|>
+  ggplot(aes(x=q,y=r2,alpha=abs((Daniel-Augustin)/(Daniel+Augustin)),
+             colour=factor(sign((Daniel-Augustin)/(Daniel+Augustin)))))+geom_point()
+
+  
+  
 ```
 
 

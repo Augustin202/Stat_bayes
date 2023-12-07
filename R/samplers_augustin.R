@@ -96,6 +96,14 @@ dist_conditional_posterior_R2_q<-function(Y,U,X,sigma2,phi,beta,z,a,b,A,B){
         }else{
           res<-res*0.001
         }
+        
+        
+        if(0.11 <= R2 & R2 <= 0.9){
+          res<-res*0.01
+        }else{
+          res<-res*0.001
+        }
+        
       }
       
       list_prob[i*p+j] <-res
@@ -134,6 +142,12 @@ draw_conditional_posterior_R2_q<-function(m=1000,Y,U,X,sigma2,phi,beta,z,a,b,A,B
         res2 <- q^(s_z + 0.5*s_z + a -1)
         res3 <-(1-q)^(k-s_z + b -1 )
         res<- (res1*res2*res3*res4*res5)
+        
+        if(0.11 <= R2 & R2 <= 0.9){
+          res<-res*0.01
+        }else{
+          res<-res*0.001
+        }
         
         if(0.11 <= q & q <= 0.9){
           res<-res*0.01
