@@ -317,6 +317,7 @@ init_D<-initial_values_f(y = y,x = xx)
 
 plot(init_A$beta,init_D$beta);abline(0,1,col="red")
 
+init_A$sigma20
 init_A$sigma2
 init_D$sigma_epsilon^2
 
