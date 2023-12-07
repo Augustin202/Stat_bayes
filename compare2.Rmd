@@ -59,9 +59,6 @@ W_tilde<-t(X_tilde)%*%X_tilde + I_sz/gamma2
 tilde_w=(t(tilde_x)%*%tilde_x+diag(s_z)/gamma2)
 inv_tilde_w=if(s_z==0){0}else{solve(tilde_w)}
 hat_tilde_beta=inv_tilde_w%*%t(tilde_x)%*%(tilde_y)
-range(tilde_w-W_tilde)
-range(tilde_x-X_tilde)
-range(tilde_y-Y_tilde)
 shape<-length(Y)/2 
 gamma2<-R2/(k*q*v_X*(1-R2))
 W_tilde<-t(X_tilde)%*%X_tilde + I_sz/gamma2_aug
@@ -77,10 +74,6 @@ mu = inv_tilde_w%*%t(tilde_x)%*%(tilde_y)
 Sigma = (sigma_epsilon^2)*inv_tilde_w
 range(mu-mean_vector)
 range(Sigma-covariance_matrix)
-aug=sample_conditional_posterior_beta_tilde(Y,U,X,phi,R2,q,sigma2,z,m=m)
-dan=sample_tildebeta_cond_y_u_x_phi_r2_q_z_sigma2(sigma_epsilon,tilde_y,tilde_x,tilde_w,m=m)
-plot(aug[1,],dan[1,]);abline(0,1,col='red')
-plot(aug[,1]|>sort(),dan[,1]|>sort());abline(0,1,col='red')
 ```
 
 ### Test gibbs one step.
@@ -103,20 +96,29 @@ Gibbs_q(x = xx,
 system.time({Augustin<-Gibbs(N=1000,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)$q})
 save(s,r_y,Daniel,Augustin,file="compare.rda")
 }
-load("compare.rda")
 
+load("compare.rda")
+library(ggplot2)
 s
 r_y
+cbind(Daniel,Augustin)|>reshape2::melt()|>
+  dplyr::group_by(Var2)|>
+  dplyr::mutate(i=dplyr::row_number(),Eq=mean(value),true=s/default_k)|>
+  dplyr::ungroup()->
+  results
+results|>
+  ggplot(aes(x=value,xintercept=Eq))+
+  geom_histogram()+
+  facet_grid(~Var2)+
+  geom_vline(aes(xintercept=Eq))+
+  geom_vline(aes(xintercept=true),color="red")
 
-hist(Daniel)
-hist(Augustin)
-
-plot(Daniel,type='l');plot(Augustin,type='l')
-
-cbind(Daniel=Daniel,Augustin=Augustin)|>
+cbind(Daniel=Daniel|>sort(),Augustin=Augustin|>sort())|>
   plot();abline(0,1,color="red")
 
-
+results|>ggplot(aes(x=i,y=value))+
+  geom_line()+
+  facet_grid(~Var2)
 
 ```
 

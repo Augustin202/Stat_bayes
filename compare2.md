@@ -47,24 +47,6 @@ W_tilde<-t(X_tilde)%*%X_tilde + I_sz/gamma2
 tilde_w=(t(tilde_x)%*%tilde_x+diag(s_z)/gamma2)
 inv_tilde_w=if(s_z==0){0}else{solve(tilde_w)}
 hat_tilde_beta=inv_tilde_w%*%t(tilde_x)%*%(tilde_y)
-range(tilde_w-W_tilde)
-```
-
-    FALSE [1] 0 0
-
-``` r
-range(tilde_x-X_tilde)
-```
-
-    FALSE [1] 0 0
-
-``` r
-range(tilde_y-Y_tilde)
-```
-
-    FALSE [1] 0 0
-
-``` r
 shape<-length(Y)/2 
 gamma2<-R2/(k*q*v_X*(1-R2))
 W_tilde<-t(X_tilde)%*%X_tilde + I_sz/gamma2_aug
@@ -94,20 +76,6 @@ range(Sigma-covariance_matrix)
 
     FALSE [1] -5.551115e-17  2.775558e-17
 
-``` r
-aug=sample_conditional_posterior_beta_tilde(Y,U,X,phi,R2,q,sigma2,z,m=m)
-dan=sample_tildebeta_cond_y_u_x_phi_r2_q_z_sigma2(sigma_epsilon,tilde_y,tilde_x,tilde_w,m=m)
-plot(aug[1,],dan[1,]);abline(0,1,col='red')
-```
-
-![](compare2_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
-
-``` r
-plot(aug[,1]|>sort(),dan[,1]|>sort());abline(0,1,col='red')
-```
-
-![](compare2_files/figure-gfm/unnamed-chunk-3-2.png)<!-- -->
-
 ### Test gibbs one step.
 
 ``` r
@@ -127,33 +95,9 @@ Gibbs_q(x = xx,
 system.time({Augustin<-Gibbs(N=1000,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)$q})
 save(s,r_y,Daniel,Augustin,file="compare.rda")
 }
-```
 
-    FALSE [1] "2023-12-07 22:26:211000"
-    FALSE [1] 50
-    FALSE [1] 100
-    FALSE [1] 150
-    FALSE [1] 200
-    FALSE [1] 250
-    FALSE [1] 300
-    FALSE [1] 350
-    FALSE [1] 400
-    FALSE [1] 450
-    FALSE [1] 500
-    FALSE [1] 550
-    FALSE [1] 600
-    FALSE [1] 650
-    FALSE [1] 700
-    FALSE [1] 750
-    FALSE [1] 800
-    FALSE [1] 850
-    FALSE [1] 900
-    FALSE [1] 950
-    FALSE [1] 1000
-
-``` r
 load("compare.rda")
-
+library(ggplot2)
 s
 ```
 
@@ -166,26 +110,32 @@ r_y
     FALSE [1] 0.5
 
 ``` r
-hist(Daniel)
+cbind(Daniel,Augustin)|>reshape2::melt()|>
+  dplyr::group_by(Var2)|>
+  dplyr::mutate(i=dplyr::row_number(),Eq=mean(value),true=s/default_k)|>
+  dplyr::ungroup()->
+  results
+results|>
+  ggplot(aes(x=value,xintercept=Eq))+
+  geom_histogram()+
+  facet_grid(~Var2)+
+  geom_vline(aes(xintercept=Eq))+
+  geom_vline(aes(xintercept=true),color="red")
 ```
 
 ![](compare2_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 ``` r
-hist(Augustin)
+cbind(Daniel=Daniel|>sort(),Augustin=Augustin|>sort())|>
+  plot();abline(0,1,color="red")
 ```
 
 ![](compare2_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
 
 ``` r
-plot(Daniel,type='l');plot(Augustin,type='l')
+results|>ggplot(aes(x=i,y=value))+
+  geom_line()+
+  facet_grid(~Var2)
 ```
 
-![](compare2_files/figure-gfm/unnamed-chunk-4-3.png)<!-- -->![](compare2_files/figure-gfm/unnamed-chunk-4-4.png)<!-- -->
-
-``` r
-cbind(Daniel=Daniel,Augustin=Augustin)|>
-  plot();abline(0,1,color="red")
-```
-
-![](compare2_files/figure-gfm/unnamed-chunk-4-5.png)<!-- -->
+![](compare2_files/figure-gfm/unnamed-chunk-4-3.png)<!-- -->
