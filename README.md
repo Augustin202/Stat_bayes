@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 Assignment 2
 ================
 Daniel Bonnery, Max Kramkimel, Augustin Poissonnier
@@ -511,3 +512,35 @@ plot_q_2_f<-function(q,k=default_k,burning){
   
 }
 ```
+=======
+# Stat_bayes
+
+## How to run 
+
+### Install the following packages:
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,error=FALSE,results=FALSE}
+renv::dependencies("R")$Package|>unique()|>sort()|>setdiff(c(
+  "montruc","LocustAnalysis","synthpop"))|>paste(collapse = ", ")->xx
+```
+
+`r xx`
+
+### Copy and execute the project:
+
+- Clone the project to a local repository
+via:
+
+```{r,eval=FALSE}
+system("git clone https://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@github.com/Augustin202/Stat_bayes.git")
+```
+
+- open the .rproj file in rstudio
+- For paper 1, run:
+
+```{r,eval=FALSE}
+library(targets)
+Sys.setenv(TAR_PROJECT = "assignment2")
+tar_make()
+```
+>>>>>>> Stashed changes
