@@ -7,9 +7,6 @@ output: github_document
 
 # Bayesian Statistics, Assignment 2
 
-
-
-
 ## Results
 
 

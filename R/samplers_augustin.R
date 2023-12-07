@@ -57,13 +57,13 @@ conditional_posterior<- function(R2, q, Y,U,X,sigma2,phi,beta,z,a,b,A,B){
 
 
 likelihood_conditional_posterior_R2_q<-
-  function(R2,q,Y,U,X,sigma2,phi,beta,z,a,b,A,B,correction=FALSE){
+  function(R2,q,Y,U,X,sigma2,phi,beta,z,a,b,A,B,v_X=sum_var(X),k=ncol(X),s_z=sum(z),correction=FALSE){
     (exp( -1/(2*sigma2)*(k*v_X*q*(1-R2))/R2 * sum(beta[z==1]^2)))*
       (q^(s_z + 0.5*s_z + a -1))*
       ((1-q)^(k-s_z + b -1 ))*
       (R2^(A-1-0.5*s_z))*
       ((1-R2)^(0.5*s_z+B-1))*
-      ((1-correction) + (correction*(.001+.009*(0.11 <= q & q <= 0.9))))}
+      ((1-correction) + (correction*(.001+.009*(0.11 <= q & q <= 0.9))*(.001+.009*(0.11 <= r2 & r2 <= 0.9))))}
 
 dist_conditional_posterior_R2_q<-function(Y,U,X,sigma2,phi,beta,z,a,b,A,B){
    grid <- c(seq(0,0.1,0.001),seq(0.11,0.9,0.01),seq(0.901,1,0.001))
