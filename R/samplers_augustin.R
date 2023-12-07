@@ -17,9 +17,9 @@ conditional_posterior<- function(R2, q, Y,U,X,sigma2,phi,beta,z,a,b,A,B){
   }
   #z <- compute_z(beta)
   k <- ncol(X)
-  v_x <- sum_var(X)
+  v_X <- sum_var(X)
   s_z <- sum(z)
-  res1 <- exp( -1/(2*sigma2)*(k*v_x*q*(1-R2))/R2 * t(beta) %*%  diag(z) %*% beta)
+  res1 <- exp( -1/(2*sigma2)*(k*v_X*q*(1-R2))/R2 * t(beta) %*%  diag(z) %*% beta)
   res2 <- q^(s_z + 0.5*s_z + a -1)
   res3 <-(1-q)^(k-s_z + b -1 )
   res4 <- R2^(A-1-0.5*s_z)
@@ -58,7 +58,7 @@ conditional_posterior<- function(R2, q, Y,U,X,sigma2,phi,beta,z,a,b,A,B){
 
 likelihood_conditional_posterior_R2_q<-
   function(R2,q,Y,U,X,sigma2,phi,beta,z,a,b,A,B,correction=FALSE){
-    (exp( -1/(2*sigma2)*(k*v_x*q*(1-R2))/R2 * sum(beta[z==1]^2)))*
+    (exp( -1/(2*sigma2)*(k*v_X*q*(1-R2))/R2 * sum(beta[z==1]^2)))*
       (q^(s_z + 0.5*s_z + a -1))*
       ((1-q)^(k-s_z + b -1 ))*
       (R2^(A-1-0.5*s_z))*
@@ -72,7 +72,7 @@ dist_conditional_posterior_R2_q<-function(Y,U,X,sigma2,phi,beta,z,a,b,A,B){
   list_prob <- vector(mode="numeric", length=p^2)
   list_prob_df<-data.frame(q=numeric(0),r2=numeric(0),prob=numeric(0))
   k <- ncol(X)
-  v_x <- sum_var(X)
+  v_X <- sum_var(X)
   s_z <- sum(z)
   calc_mat<- t(beta) %*%  diag(z) %*% beta
   for (i in 1:p){
@@ -86,7 +86,7 @@ dist_conditional_posterior_R2_q<-function(Y,U,X,sigma2,phi,beta,z,a,b,A,B){
       if(R2==0){
         res<-0
       }else{
-        res1 <- exp( -1/(2*sigma2)*(k*v_x*q*(1-R2))/R2 * calc_mat)
+        res1 <- exp( -1/(2*sigma2)*(k*v_X*q*(1-R2))/R2 * calc_mat)
         res2 <- q^(s_z + 0.5*s_z + a -1)
         res3 <-(1-q)^(k-s_z + b -1 )
         res<- (res1*res2*res3*res4*res5)
@@ -118,7 +118,7 @@ draw_conditional_posterior_R2_q<-function(m=1000,Y,U,X,sigma2,phi,beta,z,a,b,A,B
   
   
   k <- ncol(X)
-  v_x <- sum_var(X)
+  v_X <- sum_var(X)
   s_z <- sum(z)
   calc_mat<- t(beta) %*%  diag(z) %*% beta
   for (i in 1:p){
@@ -130,7 +130,7 @@ draw_conditional_posterior_R2_q<-function(m=1000,Y,U,X,sigma2,phi,beta,z,a,b,A,B
       if(R2==0){
         res<-0
       }else{
-        res1 <- exp( -1/(2*sigma2)*(k*v_x*q*(1-R2))/R2 * calc_mat)
+        res1 <- exp( -1/(2*sigma2)*(k*v_X*q*(1-R2))/R2 * calc_mat)
         res2 <- q^(s_z + 0.5*s_z + a -1)
         res3 <-(1-q)^(k-s_z + b -1 )
         res<- (res1*res2*res3*res4*res5)
