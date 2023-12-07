@@ -155,7 +155,7 @@ generate_u<-function(tt=default_tt){u=matrix(0,tt,1)}
 #'@examples
 #'r2=.5;q=.5;u=generate_u();x=generate_multiple_x(number_of_datasets = 1)[[1]]
 #'z=rep(c(1,0),c(5,95));sigma_epsilon=1;beta=rnorm(z)*z;y=generate_single_y(xx=x)
-#'tbetabeta=t(beta)%*%beta
+#'tilde_beta=beta[z==1];tbetabeta=sum(tilde_beta^2)
 #'loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z)
 
 loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb<-
@@ -167,8 +167,20 @@ loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb<-
       ((s_z/2)+bb-1)*log(1-r2)
   }
 
-
 sample_phi<-function(){0}
+
+#'@examples
+#'u=generate_u();x=generate_multiple_x(number_of_datasets = 1)[[1]]
+#'z=rep(c(1,0),c(5,95));sigma_epsilon=1;beta=z*rnorm(z);y=generate_single_y(xx=x)
+#'sample_r2_q_cond_y_u_x_theta_z(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid)
+dist_r2_q_cond_y_u_x_theta_z<-
+  function(sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid){
+    r2_q_grid|>
+      dplyr::mutate(logpi=loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(
+        r2=r2,q=q,sigma_epsilon=sigma_epsilon,barvx=barvx,k=k,a=a,b=b,aa=aa,bb=bb,tbetabeta=tbetabeta,s_z=s_z),
+        pi=dqdr2*#we multiply the probabilities by dq dr2 as the grid is not regular
+          exp(logpi-max(logpi,na.rm=TRUE))|>
+          (function(x){ifelse(is.na(x),0,x)})())}
 
 #'@examples
 #'u=generate_u();x=generate_multiple_x(number_of_datasets = 1)[[1]]
@@ -176,12 +188,7 @@ sample_phi<-function(){0}
 #'sample_r2_q_cond_y_u_x_theta_z(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid)
 sample_r2_q_cond_y_u_x_theta_z<-
   function(sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid,m=1){
-  r2_q_grid|>
-    dplyr::mutate(logpi=loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(
-      r2=r2,q=q,sigma_epsilon=sigma_epsilon,barvx=barvx,k=k,a=a,b=b,aa=aa,bb=bb,tbetabeta=tbetabeta,s_z=s_z),
-      pi=dqdr2*#we multiply the probabilities by dq dr2 as the grid is not regular
-        exp(logpi-max(logpi,na.rm=TRUE))|>
-        (function(x){ifelse(is.na(x),0,x)})())|>
+    dist_r2_q_cond_y_u_x_theta_z(sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid)|>
       dplyr::slice(sample(dplyr::n(),size=m,prob=pi,replace=TRUE))|>
       (`[`)(c("r2","q"))|>
       as.matrix()|>
@@ -279,9 +286,9 @@ sample_tildebeta_cond_y_u_x_phi_r2_q_z_sigma2<-
   function(sigma_epsilon,
            tilde_y,
            tilde_x,
-           tilde_w){
+           tilde_w,m=1){
     inv_tilde_w<-solve(tilde_w)
-    MASS::mvrnorm(n = 1, 
+    MASS::mvrnorm(n = m, 
             mu = inv_tilde_w%*%t(tilde_x)%*%(tilde_y), 
             Sigma = (sigma_epsilon^2)*inv_tilde_w)
     }
@@ -333,9 +340,9 @@ Gibbs_q<-function(x,
   s_z=sum(z)
   sigma_epsilon=  initial_values$sigma_epsilon
   tilde_beta=beta[z==1]
-  tbetabeta=t(tilde_beta)%*%tilde_beta
+  tbetabeta=sum(tilde_beta^2)
   tilde_y=y-u%*%phi
-  ttildeytildey=t(tilde_y)%*%tilde_y
+  ttildeytildey=sum(tilde_y^2)
   #I.
   for(i in 1:(nrep+burning)){
   r2_q=sample_r2_q_cond_y_u_x_theta_z(sigma_epsilon=sigma_epsilon,barvx=barvx,k=k,a=a,b=b,aa=aa,bb=bb,tbetabeta=tbetabeta,s_z=s_z,r2_q_grid=r2_q_grid)
@@ -366,7 +373,7 @@ Gibbs_q<-function(x,
     tilde_y=tilde_y,
     tilde_x=tilde_x,
     tilde_w=tilde_w)
-
+    tbetabeta=sum(tilde_beta^2)
   if(i%%1000==0){print(paste0(Sys.time(),i))}
   if(testgibbs){the_sample<-rbind(the_sample,c(q,s_z,r2,sigma_epsilon))}else{qq=c(qq,q)}
   
