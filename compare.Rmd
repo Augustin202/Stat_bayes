@@ -249,7 +249,7 @@ b=default_b
 A=aa=default_aa
 B=bb=default_bb
 k=default_k
-s=50
+s=100
 r_y=default_r_y[3]
 x=X=xx=generate_multiple_x(number_of_datasets = 1)[[1]]
 Y=y=generate_single_y(s=s,r_y=r_y,xx = xx)
@@ -311,7 +311,6 @@ plot(aug[,1]|>sort(),dan[,1]|>sort());abline(0,1,col='red')
 
 
 ```{r}
-
 init_A<-init_betasigma2(X = xx,Y = y)
 init_D<-initial_values_f(y = y,x = xx)
 
@@ -331,10 +330,31 @@ Gibbs_q(x = xx,
         aa=aa,
         bb=bb,
         nrep=100,
-        burning=0)|>sort()})
-system.time({Augustin<-Gibbs(N=100,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)$q|>sort()})
+        burning=0)})
+system.time({Augustin<-Gibbs(N=100,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)$q})
+
+plot(Daniel,type='l');plot(Augustin,type='l')
+
+cbind(Daniel=plyr::raply(100,Gibbs_q(x = xx,
+        y = y,
+        u = u,
+        barvx = barvx,
+        tt = tt,k = k,phi = phi,r2_q_grid = r2_q_grid,a=a,
+        b=b,
+        aa=aa,
+        bb=bb,
+        nrep=1,
+        burning=0))|>sort(),Augustin=plyr::raply(100,Gibbs(N=1,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)$q)|>sort())->mat
+mat|>
+  plot();abline(0,1,col="red")
+mat|>reshape2::melt()|>ggplot(aes(x=Var2,y=value,group=Var2,colour=Var2))+geom_violin()+geom_jitter()
+
+
 cbind(Daniel=Daniel,Augustin=Augustin)|>
   plot();abline(0,1,color="red")
+
+
+
 ```
 
 

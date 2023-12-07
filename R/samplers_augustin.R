@@ -57,7 +57,7 @@ conditional_posterior<- function(R2, q, Y,U,X,sigma2,phi,beta,z,a,b,A,B){
 
 
 likelihood_conditional_posterior_R2_q<-
-  function(R2,q,Y,U,X,sigma2,phi,beta,z,a,b,A,B,v_X=sum_var(X),k=ncol(X),s_z=sum(z),correction=FALSE){
+  function(R2,q,sigma2,beta,z,a,b,A,B,v_X,k,s_z,correction=FALSE){
     (exp( -1/(2*sigma2)*(k*v_X*q*(1-R2))/R2 * sum(beta[z==1]^2)))*
       (q^(s_z + 0.5*s_z + a -1))*
       ((1-q)^(k-s_z + b -1 ))*
@@ -116,62 +116,20 @@ dist_conditional_posterior_R2_q<-function(Y,U,X,sigma2,phi,beta,z,a,b,A,B){
   list_prob_df
 }  
 
-draw_conditional_posterior_R2_q<-function(m=1000,Y,U,X,sigma2,phi,beta,z,a,b,A,B){
-  
-  grid <- c(seq(0,0.1,0.001),seq(0.11,0.9,0.01),seq(0.901,1,0.001))
-  p = length(grid)
-  list_indexes <- vector(mode="numeric", length=p^2)
-  list_prob <- vector(mode="numeric", length=p^2)
-  
-  
-  
-  k <- ncol(X)
-  v_X <- sum_var(X)
-  s_z <- sum(z)
-  calc_mat<- t(beta) %*%  diag(z) %*% beta
-  for (i in 1:p){
-    R2<-grid[i]
-    res4 <- R2^(A-1-0.5*s_z)
-    res5 <- (1-R2)^(0.5*s_z+B-1)
-    for(j in 1:p){
-      q<-grid[j]
-      if(R2==0){
-        res<-0
-      }else{
-        res1 <- exp( -1/(2*sigma2)*(k*v_X*q*(1-R2))/R2 * calc_mat)
-        res2 <- q^(s_z + 0.5*s_z + a -1)
-        res3 <-(1-q)^(k-s_z + b -1 )
-        res<- (res1*res2*res3*res4*res5)
-        
-        if(0.11 <= R2 & R2 <= 0.9){
-          res<-res*0.01
-        }else{
-          res<-res*0.001
-        }
-        
-        if(0.11 <= q & q <= 0.9){
-          res<-res*0.01
-        }else{
-          res<-res*0.001
-        }
-      }
-      
-      list_prob[i*p+j] <-res
-      list_indexes[i*p+j] <- i*p+j
-    }
-  }
-  
-  
-  list_samples <- sample(list_indexes, m, replace = TRUE, prob = list_prob)
-  
-  matrix_samples <-matrix(0,m,2)
-  for (i in 1:m){
-    matrix_samples[i,1]<- grid[list_samples[i]%/%p]
-    matrix_samples[i,2]<-grid[list_samples[i]%%p]
-  }
-  return (matrix_samples)
-}
 
+grid_a=  expand.grid(
+  q=c(seq(0,0.1,0.001),seq(0.11,0.9,0.01),seq(0.901,1,0.001)),
+  R2=c(seq(0,0.1,0.001),seq(0.11,0.9,0.01),seq(0.901,1,0.001)))
+
+draw_conditional_posterior_R2_q<-function(sigma2,beta,z,a,b,A,B,v_X,k,s_z,grid_a,m=1){
+  grid_a|>
+    dplyr::mutate(prob=likelihood_conditional_posterior_R2_q(R2,q,sigma2,beta,z,a,b,A,B,v_X,k,s_z,correction=TRUE),
+                  prob=ifelse(is.na(prob),0,prob))|>
+    dplyr::slice(sample(dplyr::n(),size=m,prob=prob,replace=TRUE))|>
+    (`[`)(c("R2","q"))|>
+    as.matrix()|>
+    (`[`)(1:m,)
+}
 
 
 def_X_tilde<-function(X,z){
@@ -458,17 +416,17 @@ sample_conditional_posterior_beta_tilde<-function(Y,U,X,phi,R2,q,sigma2,z,m=1){
   return (multivariate_data)
 }
 
-sample_data0<-function(T,k,rho,s,Ry){
+sample_data0<-function(TT,k,rho,s,Ry){
   require(glmnet)
   corr_matrix <- toeplitz(rho^(0:(k-1)))
   mu <- rep(0, times = k)
-  X<-mvrnorm(n = T, mu = mu, Sigma = corr_matrix)
+  X<-mvrnorm(n = TT, mu = mu, Sigma = corr_matrix)
   X <- scale(X)
   beta<-mvrnorm(n = k, mu = 0, Sigma = 1)
   indices_zeros <- sample(length(beta), size = k-s)
   beta[indices_zeros] <- 0
-  sigma2<-sum(sapply(X%*%beta, function(x) x^2))*(1/Ry-1)/T
-  epsilon<-mvrnorm(n = T, mu = 0, Sigma = sigma2)
+  sigma2<-sum(sapply(X%*%beta, function(x) x^2))*(1/Ry-1)/TT
+  epsilon<-mvrnorm(n = TT, mu = 0, Sigma = sigma2)
   Y<-X%*%beta + epsilon
   return(list(X=X,Y=Y))}
 
@@ -482,6 +440,7 @@ init_betasigma2<-function(X,Y){
   return(list(beta=beta,sigma2=sigma2,sigma20=sigma20))
 }
 Gibbs<-function(N,a,A,b,B,k,U,phi,X,Y){
+  v_X <- sum_var(X)
   
   init<-init_betasigma2(X,Y)
   beta<-init$beta
@@ -495,9 +454,9 @@ Gibbs<-function(N,a,A,b,B,k,U,phi,X,Y){
     if (i %% 50 == 0) {
       print(i)
     }
-    mat_R2q<-draw_conditional_posterior_R2_q(m=1,Y,U,X,sigma2,phi,beta,z,a,b,A,B)
-    R2<-mat_R2q[1]
-    q<-mat_R2q[2]
+    mat_R2q<-draw_conditional_posterior_R2_q(sigma2,beta,z,a,b,A,B,v_X,k,s_z,grid_a,m=1)
+    R2<-mat_R2q["R2"]
+    q<-mat_R2q["q"]
     z<-sample_conditional_posterior_z(Y,U,X,phi,R2,q,z)
     sigma2<-sample_conditional_posterior_sigma2(Y,U,X,phi,R2, q, z)
     beta_tilde<-sample_conditional_posterior_beta_tilde(Y,U,X,phi,R2,q,sigma2,z)

@@ -115,11 +115,14 @@ generate_y_sample_q<-function(
                   xx<-x[[d$i]]
                   tt=nrow(xx)
                   k=ncol(xx)
-                  beta=draw_tildebeta(d$s)
-                  xbeta=xx[,1:d$s]%*%beta
+                  tilde_beta=draw_tildebeta(d$s)
+                  xbeta=xx[,1:d$s]%*%tilde_beta
                   #xbeta=xx[,sample(ncol(xx),size = d$s,replace=FALSE)]%*%beta#we could take the n first one would do the same
                   sigma_epsilon<-sqrt((1/r_y-1)*mean(xbeta^2))
                   y=xbeta +rnorm(nrow(xx),sd=sigma_epsilon)
+                  
+                  
+                  
                   barvx=barvx_f(xx)
                   q<-Gibbs_q(x = xx,y = y,u = u,barvx = barvx,
                              tt = tt,k = k,phi = phi,r2_q_grid = r2_q_grid,a=a,
@@ -306,6 +309,53 @@ sample_tildebeta_cond_y_u_x_phi_r2_q_z_sigma2<-
     }
 
 #0. Initial values
+#'@examples
+#'optimal_alpha(x,5,default_r_y,10)#.11
+#'optimal_alpha(x,100,default_r_y,10)
+optimal_alpha<-function(x,s,r_y,max_x){
+  number_of_datasets=length(x)
+    f<-function(alpha){
+  simulation_parameters(s,r_y,min(max_x,number_of_datasets))|>
+      
+    plyr::daply(~s+r_y+i,
+                function(d){
+                  xx<-x[[d$i]]
+                  tt=nrow(xx)
+                  k=ncol(xx)
+                  tilde_beta=draw_tildebeta(d$s)
+                  xbeta=xx[,1:d$s]%*%tilde_beta
+                  #xbeta=xx[,sample(ncol(xx),size = d$s,replace=FALSE)]%*%beta#we could take the n first one would do the same
+                  sigma_epsilon<-sqrt((1/r_y-1)*mean(xbeta^2))
+                  y=xbeta +rnorm(nrow(xx),sd=sigma_epsilon)
+                  lasso_model <- glmnet::cv.glmnet(xx, y, alpha = alpha, intercept = FALSE)
+                  beta<-(coef(lasso_model, s = "lambda.min")[-1, 1])
+                  (mean(beta!=0)-(s/k))^2})|>
+    sum()}
+  
+  mean_s<-function(alpha){
+    simulation_parameters(s,r_y,number_of_datasets)|>
+      
+      plyr::ddply(~s+r_y+i,
+                  function(d){
+                    xx<-x[[d$i]]
+                    tt=nrow(xx)
+                    k=ncol(xx)
+                    tilde_beta=draw_tildebeta(d$s)
+                    xbeta=xx[,1:d$s]%*%tilde_beta
+                    #xbeta=xx[,sample(ncol(xx),size = d$s,replace=FALSE)]%*%beta#we could take the n first one would do the same
+                    sigma_epsilon<-sqrt((1/r_y-1)*mean(xbeta^2))
+                    y=xbeta +rnorm(nrow(xx),sd=sigma_epsilon)
+                    lasso_model <- glmnet::cv.glmnet(xx, y, alpha = alpha, intercept = FALSE)
+                    beta<-(coef(lasso_model, s = "lambda.min")[-1, 1])
+                    data.frame(hats=k*mean(beta!=0))})}
+  
+    optimal_alpha<-optimize(f,c(.1,10),maximum = FALSE)$objective
+    list(optimal_alpha,mean_s(optimal_alpha))
+  }
+  
+  
+  
+
 initial_values_f<-function(y,x){
   lasso_model <- glmnet::cv.glmnet(x, y, alpha = 1, intercept = FALSE)
   beta<-(coef(lasso_model, s = "lambda.min")[-1, 1])
@@ -404,10 +454,11 @@ plot_q_1_f<-function(q,k=default_k,burning){
   q|>
     dplyr::group_by(s,r_y,i)|>
     dplyr::filter(dplyr::row_number()>burning)|>
-    dplyr::summarise(Eq=mean(q,na.rm=TRUE))|>
+    dplyr::summarise(Eq=mean(q,na.rm=TRUE),
+                     Mq=median(q,na.rm=TRUE))|>
     dplyr::ungroup()|>
     dplyr::group_by(s,r_y)|>
-    dplyr::mutate(meanEq=mean(Eq,na.rm=TRUE))|>
+    dplyr::mutate(meanEq=mean(Eq,na.rm=TRUE),medianMq=median(Mq,na.rm=TRUE),)|>
     dplyr::ungroup()|>
     ggplot(mapping = aes(x=Eq))+
     geom_histogram()+
@@ -415,12 +466,16 @@ plot_q_1_f<-function(q,k=default_k,burning){
 #    geom_density()+
     facet_grid(s~r_y)+
     geom_vline(mapping = aes(xintercept=s/k),color="red")+
-    geom_vline(mapping = aes(xintercept=meanEq),color="blue")}
+    geom_vline(mapping = aes(xintercept=medianMq),color="blue")+
+    geom_vline(mapping = aes(xintercept=meanEq),color="blue")
+  }
 
-plot_q_2_f<-function(q,k=default_k,burning){
+plot_q_2_f<-function(q,
+                     k=default_k,burning,
+                     i=1,s=5,r_y=.02){
   require(ggplot2)
   q|>
-    dplyr::filter(s==5,r_y==.02,i==1,dplyr::row_number()>burning)|>
+    dplyr::filter(s==s,r_y==r_y,i==i,dplyr::row_number()>burning)|>
     dplyr::mutate(Eq=mean(q))|>
     ggplot(mapping = aes(x=q))+
     geom_histogram(aes(y=..density..),color="black",alpha=.5)+
