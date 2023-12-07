@@ -307,9 +307,8 @@ sample_tildebeta_cond_y_u_x_phi_r2_q_z_sigma2<-
 
 #0. Initial values
 initial_values_f<-function(y,x){
-  lasso_model <- glmnet::glmnet(x, y, lambda = .1, intercept = FALSE,family="gaussian")
-  beta<-lasso_model$beta|>as.vector()
-  tilde_x=x[,beta!=0]
+  lasso_model <- glmnet::cv.glmnet(x, y, alpha = 1, intercept = FALSE)
+  beta<-(coef(lasso_model, s = "lambda.min")[-1, 1])
   ((y-x%*%beta)^2)|>sum()|>(`/`)(nrow(x)-sum(beta!=0))|>sqrt()->sigma_epsilon
   #(lm(y~tilde_x+0)|>summary())$sigma
   return(list(beta=beta,sigma_epsilon=sigma_epsilon))}

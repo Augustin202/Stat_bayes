@@ -470,32 +470,22 @@ sample_data0<-function(T,k,rho,s,Ry){
   sigma2<-sum(sapply(X%*%beta, function(x) x^2))*(1/Ry-1)/T
   epsilon<-mvrnorm(n = T, mu = 0, Sigma = sigma2)
   Y<-X%*%beta + epsilon
-  lasso_model <- glmnet::cv.glmnet(X, Y, alpha = 1, intercept = FALSE)
+  return(list(X=X,Y=Y))}
+
+init_betasigma2<-function(X,Y){
+    lasso_model <- glmnet::cv.glmnet(X, Y, alpha = 1, intercept = FALSE)
   beta<-(coef(lasso_model, s = "lambda.min")[-1, 1])
-  return(list(X,Y,beta))
+  
+  sigma20<-var(Y-X%*%beta)
+  sigma2<-((y-x%*%beta)^2)|>sum()|>(`/`)(nrow(x)-sum(beta!=0))
+  
+  return(list(beta=beta,sigma2=sigma2,sigma20=sigma20))
 }
-if(F){
-  N<-6000
+Gibbs<-function(N,a,A,b,B,k,U,phi,X,Y){
   
-  a<-1
-  A<-1
-  b<-1
-  B<-1
-  
-  T<-200
-  k<-100
-  rho<-0.75
-  U<-0
-  phi<-0
-  
-  Ry<-0.25
-  s<-10
-  
-  res<-sample_data0(T,k,rho,s,Ry)
-  X<-res[1][[1]]
-  Y<-res[2][[1]]
-  beta<-res[3][[1]]
-  sigma2<-var(Y-X%*%beta)
+  init<-init_betasigma2(X,Y)
+  beta<-init$beta
+  sigma2<-init$sigma2
   phi<-0
   z <- compute_z(beta)
   s_z<-sum(z)
@@ -505,7 +495,7 @@ if(F){
     if (i %% 50 == 0) {
       print(i)
     }
-    mat_R2q<-draw_conditional_posterior_R2_q(Y,U,X,sigma2,phi,beta,z,a,b,A,B)
+    mat_R2q<-draw_conditional_posterior_R2_q(m=1,Y,U,X,sigma2,phi,beta,z,a,b,A,B)
     R2<-mat_R2q[1]
     q<-mat_R2q[2]
     z<-sample_conditional_posterior_z(Y,U,X,phi,R2,q,z)
@@ -515,6 +505,31 @@ if(F){
     list_R2[i]<-R2
     list_q[i]<-q
   }
-  hist(list_R2, main = "Histogramme de R2", xlab = "Valeurs", ylab = "Fréquence", col = "skyblue", border = "black")
-  hist(list_q, main = "Histogramme de q", xlab = "Valeurs", ylab = "Fréquence", col = "skyblue", border = "black")
+  list(q=list_q,R2=list_R2)
+}
+if(F){
+  
+  
+  
+  N<-6000
+  
+  a<-1
+  A<-1
+  b<-1
+  B<-1
+  
+  TT<-200
+  k<-100
+  rho<-0.75
+  U<-0
+  phi<-0
+  
+  Ry<-0.25
+  s<-10
+  res<-sample_data0(T,k,rho,s,Ry)
+  gibbs_sample<-Gibbs(N,a,A,b,B,TT,k,rho,U,phi,Ry,s,X,Y)
+    
+
+hist(gibbs_sample$R2, main = "Histogramme de R2", xlab = "Valeurs", ylab = "Fréquence", col = "skyblue", border = "black")
+  hist(gibbs_sample$q, main = "Histogramme de q", xlab = "Valeurs", ylab = "Fréquence", col = "skyblue", border = "black")
 }
