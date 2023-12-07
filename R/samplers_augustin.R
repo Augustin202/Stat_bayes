@@ -63,14 +63,14 @@ likelihood_conditional_posterior_R2_q<-
       ((1-q)^(k-s_z + b -1 ))*
       (R2^(A-1-0.5*s_z))*
       ((1-R2)^(0.5*s_z+B-1))*
-      ((1-correction) + (correction*(.001+.009*(0.11 <= q & q <= 0.9))*(.001+.009*(0.11 <= r2 & r2 <= 0.9))))}
+      ((1-correction) + (correction*(.001+.009*(0.11 <= q & q <= 0.9))*(.001+.009*(0.11 <= R2 & R2 <= 0.9))))}
 
 dist_conditional_posterior_R2_q<-function(Y,U,X,sigma2,phi,beta,z,a,b,A,B){
    grid <- c(seq(0,0.1,0.001),seq(0.11,0.9,0.01),seq(0.901,1,0.001))
   p = length(grid)
   list_indexes <- vector(mode="numeric", length=p^2)
   list_prob <- vector(mode="numeric", length=p^2)
-  list_prob_df<-data.frame(q=numeric(0),r2=numeric(0),prob=numeric(0))
+  list_prob_df<-data.frame(q=numeric(0),R2=numeric(0),prob=numeric(0))
   k <- ncol(X)
   v_X <- sum_var(X)
   s_z <- sum(z)
@@ -108,7 +108,7 @@ dist_conditional_posterior_R2_q<-function(Y,U,X,sigma2,phi,beta,z,a,b,A,B){
       
       list_prob[i*p+j] <-res
       list_indexes[i*p+j] <- i*p+j
-      list_prob_df<-rbind(list_prob_df,data.frame(q=q,r2=R2,prob=res))
+      list_prob_df<-rbind(list_prob_df,data.frame(q=q,R2=R2,prob=res))
     }
   }
   
@@ -434,10 +434,10 @@ init_betasigma2<-function(X,Y){
     lasso_model <- glmnet::cv.glmnet(X, Y, alpha = 1, intercept = FALSE)
   beta<-(coef(lasso_model, s = "lambda.min")[-1, 1])
   
-  sigma20<-var(Y-X%*%beta)
-  sigma2<-((y-x%*%beta)^2)|>sum()|>(`/`)(nrow(x)-sum(beta!=0))
+  sigma2<-var(Y-X%*%beta)
+  #sigma2<-((y-x%*%beta)^2)|>sum()|>(`/`)(nrow(x)-sum(beta!=0))
   
-  return(list(beta=beta,sigma2=sigma2,sigma20=sigma20))
+  return(list(beta=beta,sigma2=sigma2))
 }
 Gibbs<-function(N,a,A,b,B,k,U,phi,X,Y){
   v_X <- sum_var(X)
@@ -458,6 +458,7 @@ Gibbs<-function(N,a,A,b,B,k,U,phi,X,Y){
     R2<-mat_R2q["R2"]
     q<-mat_R2q["q"]
     z<-sample_conditional_posterior_z(Y,U,X,phi,R2,q,z)
+    s_z<-sum(z)
     sigma2<-sample_conditional_posterior_sigma2(Y,U,X,phi,R2, q, z)
     beta_tilde<-sample_conditional_posterior_beta_tilde(Y,U,X,phi,R2,q,sigma2,z)
     beta<-compute_beta(z,beta_tilde)

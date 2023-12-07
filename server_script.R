@@ -13,7 +13,8 @@ sendtocluster(x,
               r2_q_grid=r2_q_grid_generate(),
               nrep=default_nrep,
               burning=default_burning,
-              method="Daniel")
+              method="Daniel",
+              test=FALSE)
 
 sendtocluster(x,
               s=default_s,
@@ -25,7 +26,8 @@ sendtocluster(x,
               r2_q_grid=r2_q_grid_generate(),
               nrep=default_nrep,
               burning=default_burning,
-              method="Augustin")
+              method="Augustin",
+              test=FALSE)
 
 
 

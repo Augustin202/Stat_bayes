@@ -94,7 +94,8 @@ sendtocluster<-function(x,
              r2_q_grid,
              nrep,
              burning,
-             method="Daniel"){
+             method="Daniel",
+             test=FALSE){
   dd<-simulation_parameters(s,r_y,length(x))
   scriptparams=
         list(dd=dd,x=x,
@@ -111,7 +112,8 @@ sendtocluster<-function(x,
       
       sendscripttoserver(
         .expression=expression(
-          {dd[taskid,]->d
+          {set.seed(taskid)
+            dd[taskid,]->d
             xx<-x[[d$i]]
             tt=nrow(xx)
             u=generate_u(tt)
@@ -153,11 +155,12 @@ sendtocluster<-function(x,
                        burning=burning,
                        beta,
                        sigma_epsilon)}
+            q
             }),
         scriptparams=scriptparams,
         stamp=paste0("~/Bayes3/",method,"/q"), 
         time="4:00:00",
-        .array = nrow(dd),
+        .array = if(test){1}else{nrow(dd)},
         mem=NULL,
         mem_per_cpu="3380mb",
         source_code_dir_on_server="~/Bayes3/R")
@@ -170,7 +173,7 @@ sendtocluster<-function(x,
 
   
   
-  
+
 merge_all_qs_on_server<-function(stamp="~/Bayes3/allq"){
   sendscripttoserver(
     .expression=expression(
