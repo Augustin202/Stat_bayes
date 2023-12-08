@@ -1,0 +1,46 @@
+---
+title: "Assignment 2"
+author: Daniel Bonnery, Max Kramkimel, Augustin Poissonnier
+date: Dec 5, 2023
+output: github_document
+---
+
+# Bayesian Statistics, Assignment 2
+
+## All plots
+
+```{r,echo=FALSE,results="hide",warning=FALSE,message=FALSE}
+knitr::opts_chunk$set(error=FALSE, warning=FALSE,comment=FALSE,message=FALSE)
+```
+
+```{r,echo=FALSE,results="hide",warning=FALSE,message=FALSE,comment=FALSE}
+"R"|>list.files(full.names = TRUE)|>sapply(FUN = source)
+"samples_of_q.rda"|>load()|>get()->qs
+tt=200
+k=100
+burning=1000
+```
+
+### Question 2.a
+
+```{r,echo=FALSE}
+library(scales)
+plot_q_1_f(qs,k,burning)
+```
+
+We plot the histograms of the empirical means of q by values of s and R2y.
+The red line represents s/k. The blue line represents the mean of the empirical means. We use a log10 scale for the x axis.
+
+### Question 2.b^
+
+```{r,echo=FALSE}
+plot_random_scenario(qs)
+```
+
+### Question 2.c
+```{r,echo=FALSE}
+plot_best_scenario(qs)
+
+plot_random_scenario_s_z(qs)
+```
+
