@@ -76,7 +76,7 @@ generate_single_y<-function(
                         number_of_datasets=1)[[1]]){
                   tildebeta=draw_tildebeta(s)
                   #xbeta=xx[,1:s]%*%beta
-                  xbeta=xx[,sample(k,size = d$s,replace=FALSE)]%*%tildebeta#
+                  xbeta=xx[,sample(k,size = s,replace=FALSE)]%*%tildebeta#
                   #we could take the n first one would do the same
                   sigma_epsilon<-sqrt((1/r_y-1)*mean(xbeta^2))
                   y=xbeta +rnorm(nrow(xx),sd=sigma_epsilon)

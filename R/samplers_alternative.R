@@ -326,10 +326,11 @@ sample_conditional_posterior_sigma2<-function(Y,U,X,phi,R2, q, z,m=1){
   v_X <- sum_var(X)
   gamma2<-R2/(k*q*v_X*(1-R2))
   W_tilde<-t(X_tilde)%*%X_tilde + I_sz/gamma2
-  beta_tilde_hat <- solve(W_tilde)%*%t(X_tilde)%*%Y_tilde
+  beta_tilde_hat <- try(solve(W_tilde)%*%t(X_tilde)%*%Y_tilde)
+  if(is.element("try-error",class(beta_tilde_hat))){beta_tilde_hat=0;scale=sum(Y_tilde^2/2)}else{
   scale<-t(beta_tilde_hat)%*%W_tilde%*%beta_tilde_hat
   scale<- t(Y_tilde)%*%Y_tilde - scale
-  scale<-scale/2
+  scale<-scale/2}
   echantillon_inverse_gamma <- invgamma::rinvgamma(m, shape = shape, rate = scale)
   return (echantillon_inverse_gamma)
 }

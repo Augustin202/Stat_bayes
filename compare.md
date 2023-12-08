@@ -18,14 +18,16 @@ k=default_k
 s=50
 r_y=default_r_y[3]
 X=xx=generate_multiple_x(number_of_datasets = 1)[[1]]
+v_X=sum_var(X)
 Y=y=generate_single_y(s=s,r_y=r_y,xx = xx)
 sigma2=12;
 sigma_epsilon=sqrt(sigma2)
 phi=0
 z=rep(1:0,each=50)
+s_z=sum(z)
 beta<-(`[<-`)(z,1:50,rnorm(50))
 m=1000
-aug=draw_conditional_posterior_R2_q(m,Y,U,X,sigma2,phi,beta,z,a,b,A,B)
+aug=draw_conditional_posterior_R2_q(sigma2,beta,z,a,b,A,B,v_X,k,s_z,grid_a,m)
 U=u=generate_u();
 barvx=barvx_f(xx)
 tbetabeta=t(beta)%*%beta
@@ -47,13 +49,13 @@ plot(sort(dan[,2]),sort(aug[,2]));abline(0,1,col='red')
 cbind("Daniel"=
 system.time(plyr::r_ply(100,sample_r2_q_cond_y_u_x_theta_z(sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid,m=1))),
 Augustin=
-system.time(plyr::r_ply(100,draw_conditional_posterior_R2_q(m,Y,U,X,sigma2,phi,beta,z,a,b,A,B))))
+system.time(plyr::r_ply(100,draw_conditional_posterior_R2_q(sigma2,beta,z,a,b,A,B,v_X,k,s_z,grid_a))))
 ```
 
     FALSE            Daniel Augustin
-    FALSE user.self   1.236   19.456
-    FALSE sys.self    0.048    0.000
-    FALSE elapsed     1.297   19.459
+    FALSE user.self   1.185    1.744
+    FALSE sys.self    0.020    0.048
+    FALSE elapsed     1.206    1.792
     FALSE user.child  0.000    0.000
     FALSE sys.child   0.000    0.000
 
@@ -67,7 +69,7 @@ q<-runif(m)
 R2<-r2<-runif(m)
 
 cbind(q=q,r2=r2,Daniel=loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z),
-        Augustin=likelihood_conditional_posterior_R2_q(R2,q,Y,U,X,sigma2,phi,beta,z,a,b,A,B,correction=FALSE)|>log())|>as.data.frame()->
+        Augustin=likelihood_conditional_posterior_R2_q(R2,q,sigma2,beta,z,a,b,A,B,v_X,k,s_z,correction=FALSE)|>log())|>as.data.frame()->
   alllogprobs
 
   alllogprobs|>
@@ -111,15 +113,15 @@ cbind(q=q,r2=r2,Daniel=loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(r2,q,sigm
   summary(alllogprobs$Daniel[alllogprobs$Augustin==-Inf])
 ```
 
-    FALSE    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    FALSE  -46012   -2147   -1221   -3100    -827    -660
+    FALSE     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    FALSE -34431.1  -2801.9  -1228.8  -2828.3   -878.9   -719.9
 
 ``` r
   summary(alllogprobs$Daniel[alllogprobs$Augustin!=-Inf])
 ```
 
     FALSE    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    FALSE  -722.1  -278.9  -204.1  -246.5  -167.7  -143.7
+    FALSE  -705.9  -296.0  -213.9  -254.7  -173.7  -146.0
 
 ``` r
     alllogprobs|>
@@ -166,9 +168,9 @@ dan=sample_zi_cond_zj_y_u_x_phi_gamma(z,i=1,tilde_y,ttildeytildey,xx,q,tt,k,gamm
 mean(aug);mean(dan)
 ```
 
-    FALSE [1] 0.464
+    FALSE [1] 0.286
 
-    FALSE [1] 0.471
+    FALSE [1] 0.28
 
 ``` r
 cbind("Daniel"=
@@ -178,11 +180,11 @@ system.time(plyr::r_ply(100,sample_conditional_posterior_zi(Y,U,X,sigma2,phi,gam
 ```
 
     FALSE            Daniel Augustin
-    FALSE user.self   0.208    0.252
-    FALSE sys.self    0.000    0.000
-    FALSE elapsed     0.209    0.251
-    FALSE user.child  0.000    0.000
-    FALSE sys.child   0.000    0.000
+    FALSE user.self    0.22    0.241
+    FALSE sys.self     0.00    0.000
+    FALSE elapsed      0.22    0.241
+    FALSE user.child   0.00    0.000
+    FALSE sys.child    0.00    0.000
 
 ### II Test sampler z
 
@@ -236,9 +238,9 @@ system.time(plyr::r_ply(100,sample_conditional_posterior_z(Y,U,X,phi,R2,q,z))))
 ```
 
     FALSE            Daniel Augustin
-    FALSE user.self  13.719   17.868
-    FALSE sys.self    0.000    0.007
-    FALSE elapsed    13.720   17.910
+    FALSE user.self  11.891   12.876
+    FALSE sys.self    0.000    0.004
+    FALSE elapsed    11.892   12.895
     FALSE user.child  0.000    0.000
     FALSE sys.child   0.000    0.000
 
@@ -331,9 +333,9 @@ system.time(plyr::r_ply(100,sample_conditional_posterior_sigma2(Y,U,X,phi,R2, q,
 ```
 
     FALSE            Daniel Augustin
-    FALSE user.self   0.009    0.295
+    FALSE user.self   0.008    0.254
     FALSE sys.self    0.000    0.000
-    FALSE elapsed     0.009    0.297
+    FALSE elapsed     0.008    0.254
     FALSE user.child  0.000    0.000
     FALSE sys.child   0.000    0.000
 
@@ -452,23 +454,17 @@ plot(init_A$beta,init_D$beta);abline(0,1,col="red")
 ![](compare_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
-init_A$sigma20
-```
-
-    FALSE          [,1]
-    FALSE [1,] 63.38135
-
-``` r
 init_A$sigma2
 ```
 
-    FALSE [1] 78.75028
+    FALSE          [,1]
+    FALSE [1,] 47.05642
 
 ``` r
 init_D$sigma_epsilon^2
 ```
 
-    FALSE [1] 78.75028
+    FALSE [1] 64.35501
 
 ``` r
 system.time({Daniel<-
@@ -481,24 +477,24 @@ Gibbs_q(x = xx,
         aa=aa,
         bb=bb,
         nrep=100,
-        burning=0)|>sort()})
+        burning=0)})
 ```
 
     FALSE    user  system elapsed 
-    FALSE  43.156   0.108  43.348
+    FALSE  66.405   0.028  66.454
 
 ``` r
-system.time({Augustin<-Gibbs(N=100,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)$q|>sort()})
+system.time({Augustin<-Gibbs(N=100,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)[,"q"]})
 ```
 
     FALSE [1] 50
     FALSE [1] 100
 
     FALSE    user  system elapsed 
-    FALSE  59.283   0.048  59.337
+    FALSE  60.772   0.036  60.850
 
 ``` r
-plot(Daniel);plot(Augustin)
+plot(Daniel,type='l');plot(Augustin,type='l')
 ```
 
 ![](compare_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->![](compare_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
@@ -513,7 +509,7 @@ cbind(Daniel=plyr::raply(100,Gibbs_q(x = xx,
         aa=aa,
         bb=bb,
         nrep=1,
-        burning=0))|>sort(),Augustin=plyr::raply(100,Gibbs(N=1,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)$q)|>sort())->mat
+        burning=0))|>sort(),Augustin=plyr::raply(100,Gibbs(N=1,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)[,"q"])|>sort())->mat
 mat|>
   plot();abline(0,1,col="red")
 ```

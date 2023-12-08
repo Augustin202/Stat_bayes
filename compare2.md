@@ -95,31 +95,7 @@ Gibbs_q(x = xx,
 system.time({Augustin<-Gibbs(N=1000,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)$q})
 save(s,r_y,Daniel,Augustin,file="compare.rda")
 }
-```
 
-    FALSE [1] "2023-12-07 23:46:481000"
-    FALSE [1] 50
-    FALSE [1] 100
-    FALSE [1] 150
-    FALSE [1] 200
-    FALSE [1] 250
-    FALSE [1] 300
-    FALSE [1] 350
-    FALSE [1] 400
-    FALSE [1] 450
-    FALSE [1] 500
-    FALSE [1] 550
-    FALSE [1] 600
-    FALSE [1] 650
-    FALSE [1] 700
-    FALSE [1] 750
-    FALSE [1] 800
-    FALSE [1] 850
-    FALSE [1] 900
-    FALSE [1] 950
-    FALSE [1] 1000
-
-``` r
 load("compare.rda")
 library(ggplot2)
 s

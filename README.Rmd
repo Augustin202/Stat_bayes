@@ -72,20 +72,3 @@ system("git clone https://github.com/Augustin202/Stat_bayes.git")
 ```{r,eval=FALSE}
 source(main.R)
 ```
-
-## R code
-
-The R code consists a file R/functions.R that contains all necessary functions to run the main code, a main.R file that will run the main program. The main file generates the data, draw samples of q, creates plots and compiles the Rmd file to create this markdown file, and an Rproj file, all available on github there:.
-
-
-### main.R
-
-```{r, eval=FALSE, file = 'main.R'}
-```
-
-
-### R/functions.R
-
-```{r, eval=FALSE,file = 'R/functions.R'}
-```
-

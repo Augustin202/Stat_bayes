@@ -30,14 +30,16 @@ k=default_k
 s=50
 r_y=default_r_y[3]
 X=xx=generate_multiple_x(number_of_datasets = 1)[[1]]
+v_X=sum_var(X)
 Y=y=generate_single_y(s=s,r_y=r_y,xx = xx)
 sigma2=12;
 sigma_epsilon=sqrt(sigma2)
 phi=0
 z=rep(1:0,each=50)
+s_z=sum(z)
 beta<-(`[<-`)(z,1:50,rnorm(50))
 m=1000
-aug=draw_conditional_posterior_R2_q(m,Y,U,X,sigma2,phi,beta,z,a,b,A,B)
+aug=draw_conditional_posterior_R2_q(sigma2,beta,z,a,b,A,B,v_X,k,s_z,grid_a,m)
 U=u=generate_u();
 barvx=barvx_f(xx)
 tbetabeta=t(beta)%*%beta
@@ -49,7 +51,7 @@ plot(sort(dan[,2]),sort(aug[,2]));abline(0,1,col='red')
 cbind("Daniel"=
 system.time(plyr::r_ply(100,sample_r2_q_cond_y_u_x_theta_z(sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid,m=1))),
 Augustin=
-system.time(plyr::r_ply(100,draw_conditional_posterior_R2_q(m,Y,U,X,sigma2,phi,beta,z,a,b,A,B))))
+system.time(plyr::r_ply(100,draw_conditional_posterior_R2_q(sigma2,beta,z,a,b,A,B,v_X,k,s_z,grid_a))))
 
 #dist_conditional_posterior_R2_q(Y,U,X,sigma2,phi,beta,z,a,b,A,B)|>
 #  dplyr::rename(Augustin=prob)|>
@@ -60,7 +62,7 @@ q<-runif(m)
 R2<-r2<-runif(m)
 
 cbind(q=q,r2=r2,Daniel=loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z),
-        Augustin=likelihood_conditional_posterior_R2_q(R2,q,Y,U,X,sigma2,phi,beta,z,a,b,A,B,correction=FALSE)|>log())|>as.data.frame()->
+        Augustin=likelihood_conditional_posterior_R2_q(R2,q,sigma2,beta,z,a,b,A,B,v_X,k,s_z,correction=FALSE)|>log())|>as.data.frame()->
   alllogprobs
 
   alllogprobs|>
@@ -316,7 +318,6 @@ init_D<-initial_values_f(y = y,x = xx)
 
 plot(init_A$beta,init_D$beta);abline(0,1,col="red")
 
-init_A$sigma20
 init_A$sigma2
 init_D$sigma_epsilon^2
 
@@ -331,7 +332,7 @@ Gibbs_q(x = xx,
         bb=bb,
         nrep=100,
         burning=0)})
-system.time({Augustin<-Gibbs(N=100,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)$q})
+system.time({Augustin<-Gibbs(N=100,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)[,"q"]})
 
 plot(Daniel,type='l');plot(Augustin,type='l')
 
@@ -344,7 +345,7 @@ cbind(Daniel=plyr::raply(100,Gibbs_q(x = xx,
         aa=aa,
         bb=bb,
         nrep=1,
-        burning=0))|>sort(),Augustin=plyr::raply(100,Gibbs(N=1,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)$q)|>sort())->mat
+        burning=0))|>sort(),Augustin=plyr::raply(100,Gibbs(N=1,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)[,"q"])|>sort())->mat
 mat|>
   plot();abline(0,1,col="red")
 mat|>reshape2::melt()|>ggplot(aes(x=Var2,y=value,group=Var2,colour=Var2))+geom_violin()+geom_jitter()
