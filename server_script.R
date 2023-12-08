@@ -35,9 +35,11 @@ sendtocluster(x,
 
 
 # merge_all_qs_on_server("~/Bayes3/allq")
-get_data_from_server("~/Bayes3/Daniel/allq-output.rda")|>load()|>get()|>dplyr::select(-q)|>
+qs<-get_data_from_server("~/Bayes3/Daniel/allq-output.rda")|>load()|>get()|>
+  dplyr::select(-q)|>
   dplyr::rename(q=q.q,
                 r2=q.r2, 
                 s_z=q.s_z,
-                sigma_epsilon= q.sigma_epsilon)|>
-  file.copy(to="samples_of_q.rda",overwrite = TRUE)
+                sigma_epsilon= q.sigma_epsilon)
+
+  save(qs,file="samples_of_q.rda")

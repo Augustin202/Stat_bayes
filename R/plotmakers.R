@@ -32,7 +32,8 @@ plot_q_2_f<-function(q,
     dplyr::mutate(Eq=mean(q))|>
     ggplot(mapping = aes(x=q))+
     geom_histogram(aes(y=..density..),color="black",alpha=.5)+
-    geom_line(data=data.frame(q=seq(0,1,by=.01))|>dplyr::mutate(y=dbeta(q,default_a,default_b)),
+    geom_line(data=expand.grid(s=default_s,r_y=default_r_y,q=seq(0,1,by=.01))|>
+                dplyr::mutate(y=dbeta(q,default_a,default_b)),
               aes(x=q,y=y),linetype = "dashed")+
     geom_vline(mapping = aes(xintercept=s/k),color="red")+
     geom_vline(mapping = aes(xintercept=Eq),color="blue")}
@@ -82,7 +83,8 @@ plot_best_scenario<-function(qs){
     ggplot(mapping = aes(x=q,group=interaction(s,r_y)))+
     geom_histogram(aes(y=..density..),color="black",alpha=.5)+
     geom_density()+
-    geom_line(data=data.frame(q=seq(0,1,by=.01))|>dplyr::mutate(y=dbeta(q,default_a,default_b)),
+    geom_line(data=expand.grid(s=default_s,r_y=default_r_y,q=seq(0,1,by=.01))|>
+                dplyr::mutate(y=dbeta(q,default_a,default_b)),
               aes(x=q,y=y),linetype = "dashed")+
     geom_vline(mapping = aes(xintercept=s/default_k),color="red")+
     geom_vline(mapping = aes(xintercept=Mq),color="green")+
@@ -100,13 +102,13 @@ plot_random_scenario<-function(qs){
     dplyr::mutate(t=dplyr::row_number())|>
     dplyr::filter(dplyr::row_number()>burning)|>
     dplyr::mutate(Mq=median(q,na.rm=TRUE),
-                  Eq=mean(q,na.rm=TRUE),
-                  diff=abs(s/default_k-Eq))|>
+                  Eq=mean(q,na.rm=TRUE))|>
     dplyr::ungroup()|>
     ggplot(mapping = aes(x=q,group=interaction(s,r_y)))+
     geom_histogram(aes(y=..density..),color="black",alpha=.5)+
     geom_density()+
-    geom_line(data=data.frame(q=seq(0,1,by=.01))|>dplyr::mutate(y=dbeta(q,default_a,default_b)),
+    geom_line(data=expand.grid(s=default_s,r_y=default_r_y,q=seq(0,1,by=.01))|>
+                dplyr::mutate(y=dbeta(q,default_a,default_b)),
               aes(x=q,y=y),linetype = "dashed")+
     geom_vline(mapping = aes(xintercept=s/default_k),color="red")+
     geom_vline(mapping = aes(xintercept=Mq),color="green")+
@@ -129,7 +131,8 @@ plot_random_scenario_s_z<-function(qs){
     ggplot(mapping = aes(x=s_z,group=interaction(s,r_y)))+
     geom_histogram(aes(y=..density..),color="black",alpha=.5)+
     geom_density()+
-    geom_line(data=data.frame(s_z=0:default_k)|>dplyr::mutate(y=VGAM::dbetabinom.ab(s_z,default_k,default_a,default_b)),
+    geom_line(data=expand.grid(s=default_s,r_y=default_r_y,s_z=0:default_k)|>
+                dplyr::mutate(y=VGAM::dbetabinom.ab(s_z,default_k,default_a,default_b)),
               aes(x=s_z,y=y),linetype = "dashed")+
     geom_vline(mapping = aes(xintercept=s),color="red")+
     geom_vline(mapping = aes(xintercept=Mq),color="green")+
