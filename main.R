@@ -26,7 +26,7 @@ burning         =default_burning
 # Targets list:
     x=generate_multiple_x(k=k,tt=tt,rho = rho,number_of_datasets = number_of_datasets)
   #question 2. Generate q 
-    q=generate_y_sample_q(s = s,
+    qs=generate_y_sample_q(s = s,
                           r_y = r_y,
                           a = a,
                           b = b,
@@ -36,6 +36,9 @@ burning         =default_burning
                           burning = burning,
                           x = x)
   #question 3. plots 
-    plot_q_1=plot_q_1_f(q,k,burning)
-    plot_q_2=plot_q_2_f(q,k,burning)
-
+    plot_q_1=plot_q_1_f(qs,k,burning)
+    plot_q_2=plot_q_2_f(qs,k,burning)
+    plot_best_scenario(qs)
+    plot_random_scenario_s_z(qs)
+    plot_trace_random_scenario(qs)
+    

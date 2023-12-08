@@ -40,12 +40,7 @@ plot_random_scenario(qs)
 ### Question 2.c
 ```{r,echo=FALSE}
 plot_best_scenario(qs)
-
 plot_random_scenario_s_z(qs)
-
 plot_trace_random_scenario(qs)
-
-
-
 ```
 
