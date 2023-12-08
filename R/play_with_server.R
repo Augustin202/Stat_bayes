@@ -137,7 +137,7 @@ sendtocluster<-function(x,
                           aa=aa,
                           bb=bb,
                           nrep=nrep,
-                          burning=burning)}
+                          burning=burning,testgibbs = TRUE)}
             
             if(method=="Augustin"){
               q<-Gibbs(N=6000,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)}
@@ -174,18 +174,18 @@ sendtocluster<-function(x,
   
   
 
-merge_all_qs_on_server<-function(stamp="~/Bayes3/allq"){
+merge_all_qs_on_server<-function(stamp="~/Bayes3/Daniel/allq",directory_outputs="~/Bayes3/Daniel"){
   sendscripttoserver(
     .expression=expression(
       {    
         simulation_parameters(default_s,default_r_y,default_number_of_datasets)|>
           dplyr::mutate(taskid=dplyr::row_number())|>
-          dplyr::mutate(file=paste0("q",taskid,"-output.rda"))|>
-          dplyr::filter(is.element(file,list.files()))|>
+          dplyr::mutate(file=paste0(directory_outputs,"/q",taskid,"-output.rda"))|>
+          dplyr::filter(file.exists(file))|>
           plyr::ddply(~s+r_y+i,function(d){
             data.frame(q=d$file|>load()|>get())})
       }),
-    scriptparams=list(default_s=default_s,default_r_y=default_r_y),
+    scriptparams=list(directory_outputs=directory_outputs,default_s=default_s,default_r_y=default_r_y),
     stamp=stamp, 
     time="0:05:00",
     .array = 0,

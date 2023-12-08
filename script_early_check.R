@@ -1,15 +1,28 @@
-
+library(ggplot2)
 "R"|>list.files(full.names = TRUE)|>sapply(FUN = source)
 
 copy_source_files_on_server(  source_code_dir_on_server="~/Bayes3")
 
-merge_all_qs_on_server()
+merge_all_qs_on_server(stamp="~/Bayes3/Daniel/allq",dir="~/Bayes3/Daniel")
 
-get_data_from_server("~/Bayes3/allq-output.rda")|>load()|>get()->qs
+ merge_all_qs_on_server(stamp="~/Bayes3/Augustin/allq",dir="~/Bayes3/Augustin")
 
-qs|>
+get_data_from_server("~/Bayes3/Daniel/allq-output.rda")|>load()|>get()->qsD
+
+get_data_from_server("~/Bayes3/Augustin/allq-output.rda")|>load()|>get()->qsA
+
+c(897,876,873,832,829,764,748,728,695,651,574,567,560)
+qsA|>plyr::select(s,r_y,i,q)|>
+   plot_q_1_f(burning=1000)
+
+qsD|>dplyr::select(-q)|>
+  dplyr::rename(q=q.q,
+                   r2=q.r2, 
+                   s_z=q.s_z,
+                   sigma_epsilon= q.sigma_epsilon)|>
   plot_q_1_f(burning=1000)
 
+test1<-function(qs){
 burning=1000
 qs|>dplyr::group_by(s,r_y,i)|>
   dplyr::mutate(t=dplyr::row_number())|>
@@ -27,9 +40,10 @@ qs|>dplyr::group_by(s,r_y,i)|>
   geom_vline(mapping = aes(xintercept=s/default_k),color="red")+
   geom_vline(mapping = aes(xintercept=Mq),color="green")+
   geom_vline(mapping = aes(xintercept=Eq),color="blue")+
-  facet_grid(s~r_y)
+  facet_grid(s~r_y)}
+  test1(qsA)
+  test1(qsD)
   
-
 qs|>dplyr::group_by(s,r_y,i)|>
   dplyr::mutate(t=dplyr::row_number())|>
   dplyr::filter(dplyr::row_number()>burning)|>

@@ -1,106 +1,3 @@
-Assignment 2
-================
-Daniel Bonnery, Max Kramkimel, Augustin Poissonnier
-Dec 5, 2023
-
-# Bayesian Statistics, Assignment 2
-
-## Results
-
-### Plot 1
-
-![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->![](README_files/figure-gfm/unnamed-chunk-3-2.png)<!-- -->
-
-We plot the histograms of the empirical means of q by values of s and
-R2y. The red line represents s/k. The blue line represents the mean of
-the empirical means. We use a log10 scale for the x axis.
-
-### Plot 2
-
-![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
-
-We plot the histograms of the empirical means of q by values of s and
-R2y. The red line represents s/k. The blue line represents the mean of
-the empirical means. We use a log10 scale for the x axis.
-
-## How to run
-
-### Install the following packages:
-
-dplyr, ggplot2, glmnet, invgamma, MASS, plyr, renv, stats, stringr,
-tools
-
-### Copy and execute the project:
-
--   Clone the project to a local repository via:
-
-``` r
-system("git clone https://github.com/Augustin202/Stat_bayes.git")
-```
-
--   open the .rproj file in rstudio
--   run:
-
-``` r
-source(main.R)
-```
-
-## R code
-
-The R code consists a file R/functions.R that contains all necessary
-functions to run the main code, a main.R file that will run the main
-program. The main file generates the data, draw samples of q, creates
-plots and compiles the Rmd file to create this markdown file, and an
-Rproj file, all available on github there:.
-
-### main.R
-
-``` r
-library(MASS)# for multivariate normal
-library(glmnet)#for lasso
-
-
-# Run the R scripts in the R/ folder with our custom functions:
-"R"|>list.files(full.names = TRUE)|>sapply(FUN = source)
-
-#model parameters - constants
-k     =default_k
-tt    =default_tt
-
-#model parameters - hyperpriors
-a    =default_a
-b    =default_b
-aa   =default_aa
-bb   =default_bb
-
-#simulations tuning parameters
-rho   =default_rho
-number_of_datasets  =default_number_of_datasets
-s     =default_s
-r_y   =default_r_y
-nrep            =default_nrep
-burning         =default_burning
-
-# Targets list:
-    x=generate_multiple_x(k=k,tt=tt,rho = rho,number_of_datasets = number_of_datasets)
-  #question 2. Generate q 
-    q=generate_y_sample_q(s = s,
-                          r_y = r_y,
-                          a = a,
-                          b = b,
-                          aa = aa,
-                          bb = bb,
-                          nrep = nrep,
-                          burning = burning,
-                          x = x)
-  #question 3. plots 
-    plot_q_1=plot_q_1_f(q,k,burning)
-    plot_q_2=plot_q_2_f(q,k,burning)
-```
-
-### R/functions.R
-
-``` r
 #fixed parameters
 default_l=0
 default_k=100
@@ -150,7 +47,8 @@ generate_multiple_x<-
                     aperm(2:1)})}
 
 #'@examples
-#'xx=generate_multiple_x(k=default_k,tt=default_tt,rho=default_rho,number_of_datasets=1)[[1]]
+#'xx=generate_multiple_x(
+#'    k=default_k,tt=default_tt,rho=default_rho,number_of_datasets=1)[[1]]
 #'barvx_f(xx)
 barvx_f<-function(x){x|>plyr::aaply(2,var)|>mean()}
 
@@ -166,7 +64,8 @@ draw_tildebeta<-rnorm
 #'r_y=default_r_y
 #'rho=default_rho
 #'number_of_datasets=default_number_of_datasets
-#'xx=generate_multiple_x(k=default_k,tt=default_tt,rho=default_rho,number_of_datasets=1)[[1]]
+#'xx=generate_multiple_x(
+#'    k=default_k,tt=default_tt,rho=default_rho,number_of_datasets=1)[[1]]
 #'generate_single_y(s[1],r_y[1],xx)
 generate_single_y<-function(
   s=default_s[1],
@@ -175,9 +74,10 @@ generate_single_y<-function(
                         tt=default_tt,
                         rho=default_rho,
                         number_of_datasets=1)[[1]]){
-                  beta=draw_tildebeta(s)
-                  xbeta=xx[,1:s]%*%beta
-                  #xbeta=xx[,sample(ncol(xx),size = d$s,replace=FALSE)]%*%beta#we could take the n first one would do the same
+                  tildebeta=draw_tildebeta(s)
+                  #xbeta=xx[,1:s]%*%beta
+                  xbeta=xx[,sample(k,size = d$s,replace=FALSE)]%*%tildebeta#
+                  #we could take the n first one would do the same
                   sigma_epsilon<-sqrt((1/r_y-1)*mean(xbeta^2))
                   y=xbeta +rnorm(nrow(xx),sd=sigma_epsilon)
                   y}
@@ -219,13 +119,11 @@ generate_y_sample_q<-function(
                   tt=nrow(xx)
                   k=ncol(xx)
                   tilde_beta=draw_tildebeta(d$s)
-                  xbeta=xx[,1:d$s]%*%tilde_beta
-                  #xbeta=xx[,sample(ncol(xx),size = d$s,replace=FALSE)]%*%beta#we could take the n first one would do the same
+                  #xbeta=xx[,1:d$s]%*%tilde_beta
+                  xbeta=xx[,sample(k,size = d$s,replace=FALSE)]%*%tilde_beta
+                  #we could take the n first one would do the same
                   sigma_epsilon<-sqrt((1/r_y-1)*mean(xbeta^2))
-                  y=xbeta +rnorm(nrow(xx),sd=sigma_epsilon)
-                  
-                  
-                  
+                  y=xbeta +rnorm(tt,sd=sigma_epsilon)
                   barvx=barvx_f(xx)
                   q<-Gibbs_q(x = xx,y = y,u = u,barvx = barvx,
                              tt = tt,k = k,phi = phi,r2_q_grid = r2_q_grid,a=a,
@@ -235,7 +133,7 @@ generate_y_sample_q<-function(
                               nrep=nrep,
                               burning=burning)},
                 .progress="text")|>
-    (function(x){names(dimnames(x))<-c("s","r_y","dataset","j");x})()
+    (function(x){names(dimnames(x))<-c("s","r_y","dataset","j","var");x})()
 
 }
   
@@ -267,7 +165,8 @@ generate_u<-function(tt=default_tt){u=matrix(0,tt,1)}
 #'r2=.5;q=.5;u=generate_u();x=generate_multiple_x(number_of_datasets = 1)[[1]]
 #'z=rep(c(1,0),c(5,95));sigma_epsilon=1;beta=rnorm(z)*z;y=generate_single_y(xx=x)
 #'tilde_beta=beta[z==1];tbetabeta=sum(tilde_beta^2)
-#'loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z)
+#'loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,
+#'tbetabeta,s_z)
 
 loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb<-
   function(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z){
@@ -283,12 +182,14 @@ sample_phi<-function(){0}
 #'@examples
 #'u=generate_u();x=generate_multiple_x(number_of_datasets = 1)[[1]]
 #'z=rep(c(1,0),c(5,95));sigma_epsilon=1;beta=z*rnorm(z);y=generate_single_y(xx=x)
-#'sample_r2_q_cond_y_u_x_theta_z(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid)
+#'sample_r2_q_cond_y_u_x_theta_z(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,
+#'r2_q_grid)
 dist_r2_q_cond_y_u_x_theta_z<-
   function(sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid){
     r2_q_grid|>
       dplyr::mutate(logpi=loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb(
-        r2=r2,q=q,sigma_epsilon=sigma_epsilon,barvx=barvx,k=k,a=a,b=b,aa=aa,bb=bb,tbetabeta=tbetabeta,s_z=s_z),
+        r2=r2,q=q,sigma_epsilon=sigma_epsilon,barvx=barvx,k=k,a=a,b=b,aa=aa,bb=bb,
+        tbetabeta=tbetabeta,s_z=s_z),
         pi=dqdr2*#we multiply the probabilities by dq dr2 as the grid is not regular
           exp(logpi-max(logpi,na.rm=TRUE))|>
           (function(x){ifelse(is.na(x),0,x)})())}
@@ -296,10 +197,12 @@ dist_r2_q_cond_y_u_x_theta_z<-
 #'@examples
 #'u=generate_u();x=generate_multiple_x(number_of_datasets = 1)[[1]]
 #'z=rep(c(1,0),c(5,95));sigma_epsilon=1;beta=z*rnorm(z);y=generate_single_y(xx=x)
-#'sample_r2_q_cond_y_u_x_theta_z(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid)
+#'sample_r2_q_cond_y_u_x_theta_z(r2,q,sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,
+#'s_z,r2_q_grid)
 sample_r2_q_cond_y_u_x_theta_z<-
   function(sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid,m=1){
-    dist_r2_q_cond_y_u_x_theta_z(sigma_epsilon,barvx,k,a,b,aa,bb,tbetabeta,s_z,r2_q_grid)|>
+    dist_r2_q_cond_y_u_x_theta_z(sigma_epsilon,barvx,k,a,b,aa,bb,
+                                 tbetabeta,s_z,r2_q_grid)|>
       dplyr::slice(sample(dplyr::n(),size=m,prob=pi,replace=TRUE))|>
       (`[`)(c("r2","q"))|>
       as.matrix()|>
@@ -310,7 +213,8 @@ sample_r2_q_cond_y_u_x_theta_z<-
 #'@examples
 #'r2=.5;q=.5;u=matrix(0,nrow(x),1);x=generate_multiple_x(number_of_datasets = 1)[[1]]
 #'z=rep(c(1,0),c(5,95));sigma_epsilon=1;beta=rnorm(z)*z;y=generate_single_y(xx=x)
-#'likelihood_z_cond_y_u_x_phi_gamma(z,y,u,x,phi=0,r2,q,tt=nrow(xx),s_z=sum(z),k=ncol(x),barvx=1,gamma2=gamma2_f(r2,k,q,barvx))
+#'likelihood_z_cond_y_u_x_phi_gamma(z,y,u,x,phi=0,r2,q,tt=nrow(xx),s_z=sum(z),
+#'k=ncol(x),barvx=1,gamma2=gamma2_f(r2,k,q,barvx))
 loglikelihood_z_cond_y_u_x_phi_gamma<-
   function(z,tilde_y,
            ttildeytildey,
@@ -331,19 +235,23 @@ loglikelihood_z_cond_y_u_x_phi_gamma<-
 #'@examples
 #'r2=.5;q=.5;u=generate_u();x=generate_multiple_x(number_of_datasets = 1)[[1]]
 #'z=rep(c(1,0),c(5,95));sigma_epsilon=1;beta=rnorm(z)*z;y=generate_single_y(xx=x)
-#'sample_zi_cond_zj_y_u_x_phi_gamma(z,2,y,u=generate_u(),x,phi=0,r2,q,tt=nrow(x),k=ncol(x),barvx=1,gamma2=gamma2_f(r2 = r2,k =k,q = q,barvx = barvx))
+#'sample_zi_cond_zj_y_u_x_phi_gamma(z,2,y,u=generate_u(),x,phi=0,r2,q,
+#'tt=nrow(x),k=ncol(x),barvx=1,gamma2=gamma2_f(r2 = r2,k =k,q = q,barvx = barvx))
 
 sample_zi_cond_zj_y_u_x_phi_gamma<-
   function(z,i,tilde_y,ttildeytildey,
            x,q,tt,k,
            gamma2,m=1){
-    logprob=c(loglikelihood_z_cond_y_u_x_phi_gamma((`[<-`)(z,i,0),tilde_y=tilde_y,ttildeytildey=ttildeytildey,
-                                                x=x,q=q,tt=tt,k=k,
-                                                gamma2=gamma2),
-           loglikelihood_z_cond_y_u_x_phi_gamma((`[<-`)(z,i,1),tilde_y=tilde_y,ttildeytildey=ttildeytildey,
-                                                x=x,q=q,tt=tt,k=k,
-                                                gamma2=gamma2))|>
-             (function(x){x-max(x)})()
+    logprob=c(
+      loglikelihood_z_cond_y_u_x_phi_gamma((`[<-`)(z,i,0),
+                                           tilde_y=tilde_y,ttildeytildey=ttildeytildey,
+                                           x=x,q=q,tt=tt,k=k,
+                                           gamma2=gamma2),
+      loglikelihood_z_cond_y_u_x_phi_gamma((`[<-`)(z,i,1),tilde_y=tilde_y,
+                                           ttildeytildey=ttildeytildey,
+                                           x=x,q=q,tt=tt,k=k,
+                                           gamma2=gamma2))|>
+      (function(x){x-max(x)})()
            
     if(max(logprob,na.rm=TRUE)==-Inf){1}else{
     sample(0:1,
@@ -355,7 +263,8 @@ sample_zi_cond_zj_y_u_x_phi_gamma<-
 #'@examples
 #'r2=.5;q=.5;u=generate_u();x=generate_multiple_x(number_of_datasets = 1)[[1]]
 #'z=rep(c(1,0),c(5,95));sigma_epsilon=1;beta=rnorm(z)*z;y=generate_single_y(xx=x)
-#'sample_z_cond_y_u_x_phi_gamma(z,y,u=generate_u(),x,phi=0,r2,q,tt=nrow(x),k=ncol(x),barvx=1,gamma2=gamma2_f(r2 = r2,k =k,q = q,barvx = barvx))
+#'sample_z_cond_y_u_x_phi_gamma(z,y,u=generate_u(),x,phi=0,r2,q,tt=nrow(x),
+#'k=ncol(x),barvx=1,gamma2=gamma2_f(r2 = r2,k =k,q = q,barvx = barvx))
 
 sample_z_cond_y_u_x_phi_gamma<-
   function(z,tilde_y,ttildeytildey,
@@ -411,50 +320,6 @@ sample_tildebeta_cond_y_u_x_phi_r2_q_z_sigma2<-
             Sigma = (sigma_epsilon^2)*inv_tilde_w)
     }
 
-#0. Initial values
-#'@examples
-#'optimal_alpha(x,5,default_r_y,10)#.11
-#'optimal_alpha(x,100,default_r_y,10)
-optimal_alpha<-function(x,s,r_y,max_x){
-  number_of_datasets=length(x)
-    f<-function(alpha){
-  simulation_parameters(s,r_y,min(max_x,number_of_datasets))|>
-      
-    plyr::daply(~s+r_y+i,
-                function(d){
-                  xx<-x[[d$i]]
-                  tt=nrow(xx)
-                  k=ncol(xx)
-                  tilde_beta=draw_tildebeta(d$s)
-                  xbeta=xx[,1:d$s]%*%tilde_beta
-                  #xbeta=xx[,sample(ncol(xx),size = d$s,replace=FALSE)]%*%beta#we could take the n first one would do the same
-                  sigma_epsilon<-sqrt((1/r_y-1)*mean(xbeta^2))
-                  y=xbeta +rnorm(nrow(xx),sd=sigma_epsilon)
-                  lasso_model <- glmnet::cv.glmnet(xx, y, alpha = alpha, intercept = FALSE)
-                  beta<-(coef(lasso_model, s = "lambda.min")[-1, 1])
-                  (mean(beta!=0)-(s/k))^2})|>
-    sum()}
-  
-  mean_s<-function(alpha){
-    simulation_parameters(s,r_y,number_of_datasets)|>
-      
-      plyr::ddply(~s+r_y+i,
-                  function(d){
-                    xx<-x[[d$i]]
-                    tt=nrow(xx)
-                    k=ncol(xx)
-                    tilde_beta=draw_tildebeta(d$s)
-                    xbeta=xx[,1:d$s]%*%tilde_beta
-                    #xbeta=xx[,sample(ncol(xx),size = d$s,replace=FALSE)]%*%beta#we could take the n first one would do the same
-                    sigma_epsilon<-sqrt((1/r_y-1)*mean(xbeta^2))
-                    y=xbeta +rnorm(nrow(xx),sd=sigma_epsilon)
-                    lasso_model <- glmnet::cv.glmnet(xx, y, alpha = alpha, intercept = FALSE)
-                    beta<-(coef(lasso_model, s = "lambda.min")[-1, 1])
-                    data.frame(hats=k*mean(beta!=0))})}
-  
-    optimal_alpha<-optimize(f,c(.1,10),maximum = FALSE)$objective
-    list(optimal_alpha,mean_s(optimal_alpha))
-  }
   
   
   
@@ -495,7 +360,8 @@ Gibbs_q<-function(x,
                   r2_q_grid,
                   nrep,
                   burning,testgibbs=FALSE){
-  if(testgibbs){the_sample<-matrix(ncol=4,nrow=0)|>(`colnames<-`)(c("q","r2","s_z","sigma_epsilon"))}
+  if(testgibbs){the_sample<-matrix(ncol=4,nrow=0)|>(`colnames<-`)(
+    c("q","r2","s_z","sigma_epsilon"))}
   qq=vector()
   #Initialise
   initial_values_f(x=x,y=y)->
@@ -510,7 +376,10 @@ Gibbs_q<-function(x,
   ttildeytildey=sum(tilde_y^2)
   #I.
   for(i in 1:(nrep+burning)){
-  r2_q=sample_r2_q_cond_y_u_x_theta_z(sigma_epsilon=sigma_epsilon,barvx=barvx,k=k,a=a,b=b,aa=aa,bb=bb,tbetabeta=tbetabeta,s_z=s_z,r2_q_grid=r2_q_grid)
+  r2_q=sample_r2_q_cond_y_u_x_theta_z(sigma_epsilon=sigma_epsilon,
+                                      barvx=barvx,k=k,a=a,b=b,aa=aa,
+                                      bb=bb,tbetabeta=tbetabeta,s_z=s_z,
+                                      r2_q_grid=r2_q_grid)
   r2=r2_q["r2"]
   q=r2_q["q"]
   gamma2=gamma2_f(r2,k,q,barvx)
@@ -552,41 +421,4 @@ Gibbs_q<-function(x,
 
 
 
-plot_q_1_f<-function(q,k=default_k,burning){
-  require(ggplot2)
-  q|>
-    dplyr::group_by(s,r_y,i)|>
-    dplyr::filter(dplyr::row_number()>burning)|>
-    dplyr::summarise(Eq=mean(q,na.rm=TRUE),
-                     Mq=median(q,na.rm=TRUE))|>
-    dplyr::ungroup()|>
-    dplyr::group_by(s,r_y)|>
-    dplyr::mutate(meanEq=mean(Eq,na.rm=TRUE),medianMq=median(Mq,na.rm=TRUE),)|>
-    dplyr::ungroup()|>
-    ggplot(mapping = aes(x=Eq))+
-    geom_histogram()+
-#    geom_histogram(aes(y=..density..),alpha=.5)+
-#    geom_density()+
-    facet_grid(s~r_y)+
-    geom_vline(mapping = aes(xintercept=s/k),color="red")+
-    geom_vline(mapping = aes(xintercept=medianMq),color="green")+
-    geom_vline(mapping = aes(xintercept=meanEq),color="blue")
-  }
 
-
-
-
-
-plot_q_2_f<-function(q,
-                     k=default_k,burning,
-                     i=1,s=5,r_y=.02){
-  require(ggplot2)
-  q|>
-    dplyr::filter(s==s,r_y==r_y,i==i,dplyr::row_number()>burning)|>
-    dplyr::mutate(Eq=mean(q))|>
-    ggplot(mapping = aes(x=q))+
-    geom_histogram(aes(y=..density..),color="black",alpha=.5)+
-    geom_density()+
-    geom_vline(mapping = aes(xintercept=s/k),color="red")+
-    geom_vline(mapping = aes(xintercept=Eq),color="blue")}
-```
