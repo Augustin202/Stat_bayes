@@ -141,5 +141,15 @@ plot_random_scenario_s_z<-function(qs){
 }
 
 
-
-
+plot_trace_random_scenario<-function(qs){
+  burning=1000
+  qs|>
+    dplyr::filter(i==9)|>
+    dplyr::group_by(s,r_y)|>
+    dplyr::mutate(t=dplyr::row_number())|>
+    dplyr::ungroup()|>
+    ggplot(mapping = aes(x=t,y=q,group=interaction(s,r_y)))+
+    geom_line(linewidth=.1)+
+    geom_vline(mapping = aes(xintercept=burning),color="red")+
+    facet_grid(s~r_y)
+}
