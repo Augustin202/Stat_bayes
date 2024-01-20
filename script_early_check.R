@@ -7,6 +7,9 @@ merge_all_qs_on_server(stamp="~/Bayes3/Daniel/allq",dir="~/Bayes3/Daniel")
 
 merge_all_qs_on_server(stamp="~/Bayes3/Augustin/allq",dir="~/Bayes3/Augustin")
 
+
+
+
 get_data_from_server("~/Bayes3/Daniel/allq-output.rda")|>load()|>get()|>dplyr::select(-q)|>
   dplyr::rename(q=q.q,
                 r2=q.r2, 

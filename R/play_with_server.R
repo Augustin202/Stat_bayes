@@ -128,7 +128,7 @@ sendtocluster<-function(x,
             barvx=barvx_f(xx)
             
             if(method=="Daniel"){
-              q<-Gibbs_q(x = xx,
+              gibbs_sample<-Gibbs_q(x = xx,
                           y = y,
                           u = u,
                           barvx = barvx,
@@ -137,25 +137,12 @@ sendtocluster<-function(x,
                           aa=aa,
                           bb=bb,
                           nrep=nrep,
-                          burning=burning,testgibbs = TRUE)}
+                          burning=burning)}
             
             if(method=="Augustin"){
-              q<-Gibbs(N=6000,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)}
+              gibbs_sample<-Gibbs(N=6000,a=a,A=aa,b=b,B=bb,k=k,U=0,phi=0,X=xx,Y=y)}
             
-            if(method=="cheat_init"){
-            q<-Gibbs_q2(x = xx,
-                       y = y,
-                       u = u,
-                       barvx = barvx,
-                       tt = tt,k = k,phi = phi,r2_q_grid = r2_q_grid,a=a,
-                       b=b,
-                       aa=aa,
-                       bb=bb,
-                       nrep=nrep,
-                       burning=burning,
-                       beta,
-                       sigma_epsilon)}
-            q
+            gibbs_sample
             }),
         scriptparams=scriptparams,
         stamp=paste0("~/Bayes3/",method,"/q"), 
@@ -192,3 +179,98 @@ merge_all_qs_on_server<-function(stamp="~/Bayes3/Daniel/allq",directory_outputs=
     mem=NULL,
     mem_per_cpu="3380mb",
     source_code_dir_on_server="~/Bayes3/R")}
+
+
+
+
+
+
+
+
+
+sendtocluster_assignment_3<-function(dataset,
+                                     r2_q_grid,
+                                     nrep,
+                                     burning,
+                                     nchain,
+                                     test){
+  copy_source_files_on_server(source_code_dir_on_server="~/Bayes3")
+  xx<-dataset|>dplyr::select(-Outcome,-intercept)|>
+    as.matrix()|>
+    plyr::aaply(2,function(x){(x-mean(x))/sd(x)})|>
+    t()
+  print("")
+  y=dataset[["Outcome"]]|>as.matrix()
+  u=dataset|>as.matrix()|>(`[`)(,"intercept",drop=FALSE)
+  tt=nrow(xx)
+  k=ncol(xx)
+  
+  barvx=barvx_f(dataset)
+  
+  scriptparams=list(xx=xx,
+                    y=y,u=u,tt=tt,k=k,barvx = barvx,
+                    nrep=nrep,
+                    burning=burning,
+                    posterior="beta",
+                    r2_q_grid=r2_q_grid)
+  sendscripttoserver(
+    .expression=expression(
+      {set.seed(taskid)
+        Gibbs_q(x = xx,y = y,u = u,barvx = barvx,
+                tt = tt,k = k,phi = 0,r2_q_grid = r2_q_grid,a=1,b=1,aa=1,
+                bb=1,nrep=nrep,burning=burning,posterior="beta")}),
+    scriptparams=scriptparams,
+    stamp=paste0("~/Bayes3/q"), 
+    time="4:00:00",
+    .array = if(test){2}else{nchain},
+    mem=NULL,
+    mem_per_cpu="3380mb",
+    source_code_dir_on_server="~/Bayes3/R")
+  
+}
+
+merge_cluster_assignment_3<-function(sample_on_cluster){
+
+  if(is.null(sample_on_cluster)){dir="~/group_space/epidem-readonly-data/Bayes3"
+  dirorfilepathonserver=file.path(dir,paste0("q",1:100,"-output.rda"))
+  existingfiles=file.path(dir,list.files(dir))
+  sample_on_cluster=intersect(dirorfilepathonserver,existingfiles)}
+  
+  scriptparams=list(sample_on_cluster=sample_on_cluster)
+  sendscripttoserver(
+    .expression=expression(
+      {set.seed(taskid)
+        sample_on_cluster|>
+          lapply(load)|>
+          lapply(get)|>
+          c(list(along=4))|>
+          do.call(abind::abind)}),
+    scriptparams=scriptparams,
+    stamp=paste0("~/Bayes3/qall"), 
+    time="4:00:00",
+    mem=NULL,
+    mem_per_cpu="3380mb",
+    source_code_dir_on_server="~/Bayes3/R")
+  
+  
+  
+  }
+
+get_cluster_assignment_3<-function(merged_cluster_samples){
+  if(is.null(merged_cluster_samples)){merged_cluster_samples=paste0("~/group_space/epidem-readonly-data/Bayes3/qall-output.rda")}
+  get_data_from_server(merged_cluster_samples)|>load()|>get()
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

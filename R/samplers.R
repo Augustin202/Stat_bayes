@@ -177,7 +177,8 @@ loglikelihood_r2_q_cond_y_u_x_theta_z_a_b_aa_bb<-
       ((s_z/2)+bb-1)*log(1-r2)
   }
 
-sample_phi<-function(){0}
+sample_phi<-function(y,tuu_1,tuu_1tu,tilde_x,tilde_beta,sigma_epsilon){
+  MASS::mvrnorm(1,mu=tuu_1tu%*%(y-tilde_x%*%tilde_beta),sigma_epsilon^2*tuu_1)}
 
 #'@examples
 #'u=generate_u();x=generate_multiple_x(number_of_datasets = 1)[[1]]
@@ -359,9 +360,16 @@ Gibbs_q<-function(x,
                   phi,
                   r2_q_grid,
                   nrep,
-                  burning,testgibbs=FALSE){
-  if(testgibbs){the_sample<-matrix(ncol=4,nrow=0)|>(`colnames<-`)(
-    c("q","r2","s_z","sigma_epsilon"))}
+                  burning,
+                  posterior="s_z"){
+  
+  proceed_with_phi<-prod(dim(u))!=0
+  
+  if(posterior=="s_z"){
+    the_sample<-matrix(ncol=4,nrow=0)|>(`colnames<-`)(
+      c("q","r2","s_z","sigma_epsilon"))}else{
+        the_sample<-matrix(ncol=4+k,nrow=0)|>(`colnames<-`)(
+          c("q","r2","s_z","sigma_epsilon",paste0("beta",1:k),paste0("phi",1:k)))}
   qq=vector()
   #Initialise
   initial_values_f(x=x,y=y)->
@@ -371,21 +379,29 @@ Gibbs_q<-function(x,
   s_z=sum(z)
   sigma_epsilon=  initial_values$sigma_epsilon
   tilde_beta=beta[z==1]
+  tilde_x=x[,z==1,drop=FALSE]
   tbetabeta=sum(tilde_beta^2)
+  phi=mean(y)
   tilde_y=y-u%*%phi
   ttildeytildey=sum(tilde_y^2)
+  if(proceed_with_phi){
+    tuu_1=solve(t(u)%*%u)
+    tuu_1tu=tuu_1%*%t(u)}
+    
   #I.
   for(i in 1:(nrep+burning)){
   r2_q=sample_r2_q_cond_y_u_x_theta_z(sigma_epsilon=sigma_epsilon,
                                       barvx=barvx,k=k,a=a,b=b,aa=aa,
-                                      bb=bb,tbetabeta=tbetabeta,s_z=s_z,
+                                      bb=bb,
+                                      tbetabeta=tbetabeta,
+                                      s_z=s_z,
                                       r2_q_grid=r2_q_grid)
   r2=r2_q["r2"]
   q=r2_q["q"]
   gamma2=gamma2_f(r2,k,q,barvx)
 #II.
-  if(FALSE){
-  phi=sample_phi()
+  if(proceed_with_phi){
+  phi=sample_phi(y,tuu_1,tuu_1tu,tilde_x,tilde_beta,sigma_epsilon)
   tilde_y=y-u%*%phi
   ttildeytildey=t(tilde_y)%*%tilde_y}
 #III.
@@ -398,7 +414,7 @@ Gibbs_q<-function(x,
                                   k=k,
                                   gamma2=gamma2)
   s_z=sum(z)
-  tilde_x=x[,z==1]
+  tilde_x=x[,z==1,drop=FALSE]
   tilde_w=(t(tilde_x)%*%tilde_x+diag(s_z)/gamma2)
   inv_tilde_w=if(s_z==0){0}else{solve(tilde_w)}
   hat_tilde_beta=inv_tilde_w%*%t(tilde_x)%*%(tilde_y)
@@ -414,11 +430,14 @@ Gibbs_q<-function(x,
     tilde_w=tilde_w)
     tbetabeta=sum(tilde_beta^2)
   if(i%%1000==0){print(paste0(Sys.time(),i))}
-  if(testgibbs){the_sample<-rbind(the_sample,c(q,r2,s_z,sigma_epsilon))}else{qq=c(qq,q)}
-  
+  if(posterior=="s_z"){
+    the_sample<-rbind(the_sample,c(q,r2,s_z,sigma_epsilon))
+  }else{
+    betaprint=z;betaprint[z==1]<-tilde_beta
+    phiprint<-phi;names(phi)<-paste0("phi",1:length(phi))
+    the_sample<-rbind(the_sample,
+                      c(q,r2,s_z,sigma_epsilon,betaprint,phi))
   }
-  if(testgibbs){the_sample}else{qq}}
-
-
-
-
+  }
+  the_sample
+}

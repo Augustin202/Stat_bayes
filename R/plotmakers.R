@@ -4,20 +4,18 @@ plot_q_1_f<-function(qs,k=default_k,burning){
   qs|>
     dplyr::group_by(s,r_y,i)|>
     dplyr::filter(dplyr::row_number()>burning)|>
-    dplyr::summarise(Eq=mean(q,na.rm=TRUE),
-                     Mq=median(q,na.rm=TRUE))|>
+    dplyr::summarise(Mq=median(q,na.rm=TRUE))|>
     dplyr::ungroup()|>
     dplyr::group_by(s,r_y)|>
-    dplyr::mutate(meanEq=mean(Eq,na.rm=TRUE),medianMq=median(Mq,na.rm=TRUE),)|>
+    dplyr::mutate(medianMq=median(Mq,na.rm=TRUE),)|>
     dplyr::ungroup()|>
-    ggplot(mapping = aes(x=Eq))+
+    ggplot(mapping = aes(x=Mq))+
     geom_histogram()+
     #    geom_histogram(aes(y=..density..),alpha=.5)+
     #    geom_density()+
     facet_grid(s~r_y)+
     geom_vline(mapping = aes(xintercept=s/k),color="red")+
-    geom_vline(mapping = aes(xintercept=medianMq),color="green")+
-    geom_vline(mapping = aes(xintercept=meanEq),color="blue")
+    geom_vline(mapping = aes(xintercept=medianMq),color="green")
 }
 
 
