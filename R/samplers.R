@@ -337,16 +337,42 @@ initial_values_f<-function(y,x){
 #'k=default_k
 #'x=generate_multiple_x(number_of_datasets = 1)[[1]]
 #'y=generate_single_y(s=50,r_y=.5,xx=x)
-#'u=generate_u()
+#'u=generate_u()+1
 #'a=default_a
 #'b=default_a
 #'aa=default_b
 #'bb=default_bb
-#'barvx=default_barvx
+#'barvx=barvx_f(x)
 #'phi=0
 #'r2_q_grid=r2_q_grid_generate()
-#'nrep=default_nrep
-#'burning=default_burning
+#'nrep=10;default_nrep
+#'burning=3;default_burning
+#'Gibbs_q(x,barvx,y,u,a,b,aa,bb,tt,k,phi,r2_q_grid,nrep,burning,posterior="")->qq
+#'dim(qq)
+#'colnames(qq)
+#'#'tar_load(assignment_3_data)
+#'tar_load(ré_q_grid)
+#'nrep=1000
+#'burning=4
+#'dataset=assignment_3_data
+#'nchain=2
+#'xx<-dataset|>dplyr::select(-Outcome,-intercept)|>
+#'  as.matrix()|>
+#'      plyr::aaply(2,function(x){(x-mean(x))/sd(x)})|>
+#'        t()
+#'          y=dataset[["Outcome"]]|>as.matrix()
+#'          u=dataset|>as.matrix()|>(`[`)(,"intercept",drop=FALSE)
+#'            tt=nrow(xx)
+#'            k=ncol(xx)
+#'              barvx=barvx_f(dataset)
+#'                  Gibbs_q(x = xx,y = y,u = u,barvx = barvx,
+#'                  tt = tt,k = k,phi = 0,r2_q_grid = r2_q_grid,a=1,b=1,aa=1,
+#'                  bb=1,nrep=nrep,burning=burning,posterior="beta")->testg
+#'                  testg[,"s_z"]|>plot()
+#'                  testg[,"phi1"]|>plot()
+#'                  testg[,"r2"]|>plot()
+#'                  testg[,"q"]|>plot()
+
 Gibbs_q<-function(x,
                   barvx=barvx_f(x),
                   y,
@@ -368,8 +394,9 @@ Gibbs_q<-function(x,
   if(posterior=="s_z"){
     the_sample<-matrix(ncol=4,nrow=0)|>(`colnames<-`)(
       c("q","r2","s_z","sigma_epsilon"))}else{
-        the_sample<-matrix(ncol=4+k,nrow=0)|>(`colnames<-`)(
-          c("q","r2","s_z","sigma_epsilon",paste0("beta",1:k),paste0("phi",1:k)))}
+        kk<-dim(u)[2]
+        the_sample<-matrix(ncol=4+k+kk,nrow=0)|>(`colnames<-`)(
+          c("q","r2","s_z","sigma_epsilon",paste0("beta",1:k),if(proceed_with_phi){paste0("phi",1:kk)}else{character(0)}))}
   qq=vector()
   #Initialise
   initial_values_f(x=x,y=y)->
@@ -434,9 +461,9 @@ Gibbs_q<-function(x,
     the_sample<-rbind(the_sample,c(q,r2,s_z,sigma_epsilon))
   }else{
     betaprint=z;betaprint[z==1]<-tilde_beta
-    phiprint<-phi;names(phi)<-paste0("phi",1:length(phi))
+    if(proceed_with_phi){phiprint<-phi;names(phiprint)<-paste0("phi",1:length(phi))}
     the_sample<-rbind(the_sample,
-                      c(q,r2,s_z,sigma_epsilon,betaprint,phi))
+                      c(q,r2,s_z,sigma_epsilon,betaprint,if(proceed_with_phi){phiprint}else{numeric(0)}))
   }
   }
   the_sample

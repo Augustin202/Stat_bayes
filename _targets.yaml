@@ -1,0 +1,7 @@
+assignment_2:
+  store:  _targets_store/assignment_2
+  script: _targets_scripts/assignment_2.R
+
+assignment_3:
+  store:  _targets_store/assignment_3
+  script: _targets_scripts/assignment_3.R
