@@ -1,7 +1,31 @@
-Assignment 2
+Assignment 3
 ================
 Daniel Bonnery, Max Kramkimel, Augustin Poissonnier
 Dec 5, 2023
+
+# Bayesian Statistics, Assignment 3
+
+### Install the following packages:
+
+abind, dplyr, ggplot2, glmnet, invgamma, MASS, parallel, plyr, reshape2,
+stats, stringr, tools, VGAM
+
+### Copy and execute the project:
+
+-   Clone the project to a local repository via:
+
+``` r
+system("git clone  --branch augustin https://github.com/Augustin202/Stat_bayes.git")
+```
+
+-   open the .rproj file in rstudio
+-   run:
+
+``` r
+library(targets)
+Sys.setenv(TAR_PROJECT = "assignment_3")
+tar_make()
+```
 
 # Bayesian Statistics, Assignment 2
 
@@ -9,7 +33,7 @@ Dec 5, 2023
 
 ### Plot 1
 
-![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->![](README_files/figure-gfm/unnamed-chunk-3-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->![](README_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
 
 We plot the histograms of the empirical means of q by values of s and
 R2y. The red line represents s/k. The blue line represents the mean of
@@ -17,7 +41,7 @@ the empirical means. We use a log10 scale for the x axis.
 
 ### Plot 2
 
-![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 We plot the histograms of the empirical means of q by values of s and
 R2y. The red line represents s/k. The blue line represents the mean of
@@ -27,8 +51,8 @@ the empirical means. We use a log10 scale for the x axis.
 
 ### Install the following packages:
 
-dplyr, ggplot2, glmnet, invgamma, MASS, plyr, renv, stats, stringr,
-tools
+abind, dplyr, ggplot2, glmnet, invgamma, MASS, parallel, plyr, reshape2,
+stats, stringr, SweaveLst, tools, VGAM
 
 ### Copy and execute the project:
 
