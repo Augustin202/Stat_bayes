@@ -14,13 +14,15 @@ final_project_get_dictionnary<-function(datasetnames){
     readLines()|>
     (function(x){x[x!=""]})()|>
     (`[`)(77:314)->dict0
-  pos1<-plyr::aaply(dict0,1,function(text,pattern){gregexpr(pattern,text)[[1]][1]},pattern = ":")
+  pos1<-plyr::aaply(dict0,1,function(text,pattern){gregexpr(pattern,text)[[1]][1]},
+                    pattern = ":")
   starts<-which(pos1==18)
   grep(":",dict0)
   ends=c(starts[-1]-1,length(dict0))
   dictvar0=sapply(1:length(starts),
                   function(i){
-                    paste(trimws(dict0,which="right")[starts[i]:ends[i]],collapse=" ")})|>
+                    paste(trimws(dict0,which="right")[starts[i]:ends[i]],
+                          collapse=" ")})|>
     gsub(pattern = "Source:",replacement = "Source :")
   hassource=grepl("source ",tolower(dictvar0))  
   isy<-grepl("xx",dictvar0)
@@ -35,19 +37,23 @@ final_project_get_dictionnary<-function(datasetnames){
       sub(pattern = "Source :.*",replacement = "")|>
       sub(pattern = "\\(xx.*",replacement = ""),
     source=ifelse(hassource,
-                  substr(dictvar0,19,nchar(dictvar0))|>trimws()|>sub(pattern = ".*Source :",replacement = ""),"")|>
+                  substr(dictvar0,19,nchar(dictvar0))|>trimws()|>
+                    sub(pattern = ".*Source :",replacement = ""),"")|>
       sub(pattern = "\\(xx.*",replacement = ""),
     `time frame`=ifelse(isy,"Year 1965",ifelse(is5y, "60--64","")))
   w=grep(",",dictvar$nom)
   dictvar2<-dictvar[w,]
   dictvar$nom[w]<-sub("\\,.*", "", dictvar$nom[w])|>trimws()
   dictvar2$nom<-sub(".*\\,", "", dictvar2$nom)|>trimws()
-  dictvar=rbind(dictvar,
-                dictvar2,
-                data.frame(nom=c("outcome","intercept"),
-                           description=c("national growth rates in GDP per capita for the periods 1965-1975","Constant variable equal to 1"),
-                           source="",
-                           `time frame`=""))|>
+  dictvar=rbind(
+    dictvar,
+    dictvar2,
+    data.frame(nom=c("outcome","intercept"),
+               description=
+                 c("national growth rates in GDP per capita for the periods 1965-1975",
+                   "Constant variable equal to 1"),
+               source="",
+               `time frame`=""))|>
     dplyr::mutate(nom=sub(" .*", "", nom),
                   description=stringr::str_squish(description))|>
     dplyr::filter(is.element(tolower(nom),tolower(datasetnames)))|>
@@ -192,11 +198,11 @@ assign3_plot_acf_f<-function(merged_samples,output="output/assignment_3_fig2.pdf
 assign3_plot_trace_f<-function(merged_samples,output="output/assignment_3_fig3.pdf"){
   merged_samples$allsamples[,c("q","s_z","r2","sigma_epsilon","phi1"),1:3,drop=FALSE]|>
     reshape2::melt()|>
-    dplyr::mutate(          Var2=dplyr::recode(Var2,"q"="$q$",
-                                               "s_z"="$\\sum_{i=1}^k z_i$",
-                                               "sigma_epsilon"="$\\sigma_\\varepsilon$",
-                                               "r2"="$R^2$",
-                                               "phi1"="$\\phi_1$"))|>
+    dplyr::mutate(Var2=dplyr::recode(Var2,"q"="$q$",
+                                     "s_z"="$\\sum_{i=1}^k z_i$",
+                                     "sigma_epsilon"="$\\sigma_\\varepsilon$",
+                                     "r2"="$R^2$",
+                                     "phi1"="$\\phi_1$"))|>
     ggplot(aes(x=Var1,y=value,group=Var3))+
     facet_grid(Var2~Var3,scale="free_y")+
     geom_line()+xlab('')+ylab('')->the_plot
@@ -250,7 +256,8 @@ assign3_plot1_f<-function(plot_1_data,output= "output/assignment_3_fig1.pdf"){
   assign3_plot_1<-
     plot_1_data[,c("q","s_z","r2","sigma_epsilon","phi1"),]|>
     reshape2::melt()|>
-    dplyr::mutate(Var3=dplyr::recode(Var3,"sample1"="$a=1, b=1$","sample2"="$a=10, b=100$"),
+    dplyr::mutate(Var3=dplyr::recode(Var3,"sample1"="$a=1, b=1$",
+                                     "sample2"="$a=10, b=100$"),
                   Var2=dplyr::recode(Var2,"q"="$q$",
                                      "s_z"="$\\sum_{i=1}^k z_i$",
                                      "sigma_epsilon"="$\\sigma_\\varepsilon$",
@@ -278,72 +285,89 @@ assign3_plot1_f<-function(plot_1_data,output= "output/assignment_3_fig1.pdf"){
 #'output="output/assignment_3_figCI.pdf"
 #'.vars=c("q","s_z","r2","sigma_epsilon","phi1")
 
-assign3_plot_ci_f<-function(merged_samples,output="output/assignment_3_figCI.pdf",r2_q_grid,.vars=c("q","s_z","r2","sigma_epsilon","phi1")){
+assign3_plot_ci_f<-function(merged_samples,
+                            output="output/assignment_3_figCI.pdf",
+                            r2_q_grid,
+                            .vars=c("q","s_z","r2","sigma_epsilon","phi1")){
   merged_samples$allsamples[,.vars,]|>
     reshape2::melt()|>
     dplyr::select(-Var1,-Var3)|>
     dplyr::mutate(
       Var2=dplyr::recode(Var2,"q"="$q$",
-                                     "s_z"="$\\sum_{i=1}^k z_i$",
-                                     "sigma_epsilon"="$\\sigma_\\varepsilon$",
-                                     "r2"="$R^2$",
-                                     "phi1"="$\\phi_1$"))->X
-    
-    center<-function(x){
-      y=unique(x)
-      c(3/2*y[1]-y[2]/2,
-        (y[-1]+y[-length(y)])/2,
-        3/2*y[length(y)]-1/2*y[length(y)-1])|>sort()
-      }
-    geom.text.size = 6
-    theme.size =  geom.text.size  
-    
-X|>ggplot(aes(x=value,group=Var2)) + 
-  mapply(FUN = function(x){
-    z=unique(x$Var2)
-    if(is.element(z,c("$q$","$R^2$","$\\phi_1$"))){
-      if(z=="$q$"){
-        pp=geom_line(data=data.frame(x=seq(min(x$value),max(x$value),length.out=1000),Var2="$q$")|>
-                       dplyr::mutate(y=dbeta(x,10,100)),aes(x=x,y=y),color="blue",size=.75,linetype = "dashed")
-      }
-      if(z=="$R^2$"){
-        pp=geom_line(data=data.frame(x=seq(min(x$value),max(x$value),length.out=1000),Var2="$R^2$")|>
-                       dplyr::mutate(y=1),aes(x=x,y=y),color="blue",size=.75,linetype = "dashed")
-      }
-      if(z=="$\\phi_1$"){
-        pp=geom_line(data=data.frame(x=seq(min(x$value),max(x$value),length.out=1000),Var2="$\\phi_1$")|>
-                       dplyr::mutate(y=1),aes(x=x,y=y),color="blue",size=.75,linetype = "dashed")
-      }
-    }else{pp=geom_blank()}
-    pp
-  }, 
-  plyr::dlply(X, ~Var2))+ 
-  mapply(FUN = function(x){
-    z=unique(x$Var2)
-    if(!is.element(z,c("$q$","$\\sum_{i=1}^k z_i$","r2"="$R^2$"))){
-      breaks = quantile(x$value,probs=seq(0,1,length.out=41))
-      geom_histogram(data = x,aes(y=..density..), color=NA,fill=rep(c("black","red","black"),c(1,38,1)),alpha=.5, position="identity",
-                     breaks = breaks)}else{
-      if(z=="$\\sum_{i=1}^k z_i$"){
-        breaks=unique(c(x$value-1/2,x$value+1/2))}
-    if(z=="$R^2$"){
-          breaks=center(r2_q_grid$r2)
-          breaks[breaks>1]<-1
-          breaks[breaks<0]<-0
+                         "s_z"="$\\sum_{i=1}^k z_i$",
+                         "sigma_epsilon"="$\\sigma_\\varepsilon$",
+                         "r2"="$R^2$",
+                         "phi1"="$\\phi_1$"))->X
+  
+  center<-function(x){
+    y=unique(x)
+    c(3/2*y[1]-y[2]/2,
+      (y[-1]+y[-length(y)])/2,
+      3/2*y[length(y)]-1/2*y[length(y)-1])|>sort()
+  }
+  geom.text.size = 6
+  theme.size =  geom.text.size  
+  
+  X|>ggplot(aes(x=value,group=Var2)) + 
+    mapply(FUN = function(x){
+      z=unique(x$Var2)
+      if(is.element(z,c("$q$","$R^2$","$\\phi_1$"))){
+        if(z=="$q$"){
+          pp=geom_line(
+            data=data.frame(x=seq(min(x$value),max(x$value),length.out=1000),
+                            Var2="$q$")|>
+              dplyr::mutate(y=dbeta(x,10,100)),aes(x=x,y=y),
+            color="blue",size=.75,linetype = "dashed")
+        }
+        if(z=="$R^2$"){
+          pp=geom_line(
+            data=data.frame(x=seq(min(x$value),max(x$value),length.out=1000),
+                            Var2="$R^2$")|>
+              dplyr::mutate(y=1),aes(x=x,y=y),color="blue",size=.75,linetype = "dashed")
+        }
+        if(z=="$\\phi_1$"){
+          pp=geom_line(
+            data=data.frame(x=seq(min(x$value),max(x$value),length.out=1000),
+                            Var2="$\\phi_1$")|>
+              dplyr::mutate(y=1),aes(x=x,y=y),color="blue",size=.75,linetype = "dashed")
+        }
+      }else{pp=geom_blank()}
+      pp
+    }, 
+    plyr::dlply(X, ~Var2))+ 
+    mapply(FUN = function(x){
+      z=unique(x$Var2)
+      if(!is.element(z,c("$q$","$\\sum_{i=1}^k z_i$","r2"="$R^2$"))){
+        breaks = quantile(x$value,probs=seq(0,1,length.out=41))
+        geom_histogram(
+          data = x,aes(y=..density..), 
+          color=NA,fill=rep(c("black","red","black"),c(1,38,1)),
+          alpha=.5, position="identity",
+          breaks = breaks)}else{
+            if(z=="$\\sum_{i=1}^k z_i$"){
+              breaks=unique(c(x$value-1/2,x$value+1/2))}
+            if(z=="$R^2$"){
+              breaks=center(r2_q_grid$r2)
+              breaks[breaks>1]<-1
+              breaks[breaks<0]<-0
           breaks<-c(breaks[1],breaks[-1][breaks[-length(breaks)]<=max(x$value)])
-          breaks<-c(breaks[-length(breaks)][breaks[-1]>=min(x$value)],breaks[length(breaks)])
+          breaks<-c(breaks[-length(breaks)][breaks[-1]>=min(x$value)],
+                    breaks[length(breaks)])
           breaks=unique(breaks)|>sort()}
     if(z=="$q$"){
       breaks=center(r2_q_grid$q)
       breaks[breaks>1]<-1
       breaks[breaks<0]<-0
       breaks<-c(breaks[1],breaks[-1][breaks[-length(breaks)]<=max(x$value)])
-      breaks<-c(breaks[-length(breaks)][breaks[-1]>=min(x$value)],breaks[length(breaks)])
+      breaks<-c(breaks[-length(breaks)][breaks[-1]>=min(x$value)],
+                breaks[length(breaks)])
       breaks=unique(breaks)|>sort()}
     breaks2=breaks[-length(breaks)]|>sort()
       colors=c("black","red")[1+(breaks2>=quantile(x$value,probs=0.025)
                                          &breaks2<=quantile(x$value,probs=0.975))]
-      geom_histogram(data = x,aes(y=..density..), fill=colors,alpha=.5, color=NA,position="identity",
+      geom_histogram(
+        data = x,aes(y=..density..), 
+        fill=colors,alpha=.5, color=NA,position="identity",
                      breaks = breaks)    
     }
   }, 

@@ -1,9 +1,41 @@
 ---
-title: "Assignment 2"
+title: "Assignment 3"
 author: Daniel Bonnery, Max Kramkimel, Augustin Poissonnier
 date: Dec 5, 2023
 output: github_document
 ---
+
+# Bayesian Statistics, Assignment 3
+
+
+### Install the following packages:
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,error=FALSE,results=FALSE}
+renv::dependencies("R")$Package|>unique()|>sort()|>setdiff(c(
+  "montruc","LocustAnalysis","synthpop","SweaveLst"))|>paste(collapse = ", ")->xx
+```
+
+`r xx`
+
+### Copy and execute the project:
+
+- Clone the project to a local repository
+via:
+
+```{r,eval=FALSE}
+system("git clone  --branch augustin https://github.com/Augustin202/Stat_bayes.git")
+```
+
+- open the .rproj file in rstudio
+- run:
+
+```{r,eval=FALSE}
+library(targets)
+Sys.setenv(TAR_PROJECT = "assignment_3")
+tar_make()
+
+```
+
 
 # Bayesian Statistics, Assignment 2
 
